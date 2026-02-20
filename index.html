@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wallet Cloud Pro 2026</title>
+    <title>Wallet Cloud Multi-Year</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
@@ -50,12 +50,12 @@
 <body>
 
 <div id="auth-screen" class="auth-overlay">
-    <h1 style="color: var(--primary)">💰 Wallet Cloud 2026</h1>
+    <h1 style="color: var(--primary)">💰 Wallet Cloud</h1>
     <button style="padding: 15px 35px; font-size: 1.1rem; cursor: pointer; background: var(--info); color: white; border: none; border-radius: 50px; font-weight: bold;" onclick="handleAuthClick()">ACCEDI CON GOOGLE</button>
 </div>
 
 <aside class="sidebar">
-    <h2>📊 Wallet 2026</h2>
+    <h2>📊 Wallet <select id="year-selector" onchange="render()" style="width: auto; font-size: 1.2rem; border: none; background: transparent; font-weight: bold; cursor: pointer;"></select></h2>
     <button class="nav-btn active" onclick="showPage('dashboard', this)">Riepilogo Annuale</button>
     <button class="nav-btn" onclick="showPage('monthly', this)">Vista Mensile</button>
     <button class="nav-btn" onclick="showPage('history', this)">Lista & Categorie</button>
@@ -169,17 +169,20 @@
     }
 
     function exportToExcel() {
-        const data = records.map(r => ({
-            Data: r.date.split('-').reverse().join('/'),
-            Descrizione: r.desc,
-            Categoria: r.category,
-            Tipo: r.type,
-            'Importo €': r.amount
-        }));
+        const selYear = document.getElementById('year-selector').value;
+        const data = records
+            .filter(r => new Date(r.date).getFullYear().toString() === selYear)
+            .map(r => ({
+                Data: r.date.split('-').reverse().join('/'),
+                Descrizione: r.desc,
+                Categoria: r.category,
+                Tipo: r.type,
+                'Importo €': r.amount
+            }));
         const worksheet = XLSX.utils.json_to_sheet(data);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Movimenti 2026");
-        XLSX.writeFile(workbook, "Storico_Wallet_2026.xlsx");
+        XLSX.utils.book_append_sheet(workbook, worksheet, `Movimenti ${selYear}`);
+        XLSX.writeFile(workbook, `Wallet_${selYear}.xlsx`);
     }
 
     function addCat(type) {
@@ -190,7 +193,12 @@
     async function delCat(type, idx) { if(confirm("Eliminare questa categoria?")) { if(type==='inc') catsInc.splice(idx, 1); else catsExp.splice(idx, 1); render(); await saveToCloud(); } }
 
     function render() {
+        const selYear = document.getElementById('year-selector').value;
         const selM = parseInt(document.getElementById('month-filter').value);
+        
+        // Filtra record per l'anno selezionato
+        const yearRecords = records.filter(r => new Date(r.date).getFullYear().toString() === selYear);
+
         updateCatDropdown();
         const fCat = document.getElementById('f-cat');
         const currentFCat = fCat.value;
@@ -201,8 +209,8 @@
         document.getElementById('h-sum').innerHTML = hHTML; document.getElementById('h-inc').innerHTML = hHTML; document.getElementById('h-exp').innerHTML = hHTML;
 
         let mStats = months.map((_, i) => ({
-            inc: records.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0),
-            exp: records.filter(r => r.type === 'Uscita' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0)
+            inc: yearRecords.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0),
+            exp: yearRecords.filter(r => r.type === 'Uscita' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0)
         }));
 
         const buildRow = (lbl, data, cls) => {
@@ -215,8 +223,8 @@
         const buildCatTable = (cats, type, bodyId) => {
             let html = '';
             cats.forEach(c => {
-                let rowData = months.map((_, i) => records.filter(r => r.type === type && r.category === c.n && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0));
-                html += buildRow(c.n, rowData, type === 'Entrata' ? 'val-inc' : 'val-inc' ? 'val-inc' : 'val-exp');
+                let rowData = months.map((_, i) => yearRecords.filter(r => r.type === type && r.category === c.n && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0));
+                html += buildRow(c.n, rowData, type === 'Entrata' ? 'val-inc' : 'val-exp');
             });
             document.getElementById(bodyId).innerHTML = html;
         };
@@ -225,7 +233,7 @@
         const buildMTable = (list, type, bodyId) => {
             const body = document.getElementById(bodyId); body.innerHTML = '';
             list.forEach(c => {
-                const real = records.filter(r => r.type === type && r.category === c.n && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
+                const real = yearRecords.filter(r => r.type === type && r.category === c.n && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
                 const diff = type === 'Entrata' ? (real - c.b) : (c.b - real);
                 body.innerHTML += `<tr><td class="bold-cat">${c.n}</td><td>${c.b}€</td><td>${real.toFixed(0)}€</td><td style="color:${diff>=0?'green':'red'}">${diff.toFixed(0)}€</td></tr>`;
             });
@@ -236,15 +244,15 @@
         const fM = document.getElementById('f-month').value;
         const fT = document.getElementById('f-type').value;
         const fC = document.getElementById('f-cat').value;
-        const filtered = records.filter(r => r.desc.toLowerCase().includes(fS) && (fM==="" || new Date(r.date).getMonth()==fM) && (fT==="" || r.type===fT) && (fC==="" || r.category===fC));
+        const filtered = yearRecords.filter(r => r.desc.toLowerCase().includes(fS) && (fM==="" || new Date(r.date).getMonth()==fM) && (fT==="" || r.type===fT) && (fC==="" || r.category===fC));
         document.getElementById('history-body').innerHTML = filtered.slice().reverse().map(r => `<tr><td style="text-align:left">${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">${r.amount}€</td><td style="text-align:right"><button class="btn-x" onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
         
-        updateCharts(mStats, selM);
+        updateCharts(mStats, selM, yearRecords);
         const rendCatEdit = (list, type, divId) => { document.getElementById(divId).innerHTML = list.map((c, i) => `<div class="cat-item"><span>${c.n}</span><label style="font-size:0.7rem">Budget:</label><input type="number" value="${c.b}" onchange="updateBudget('${type}', ${i}, this.value)"><button class="btn-del-cat" onclick="delCat('${type}', ${i})">✕</button></div>`).join(''); };
         rendCatEdit(catsInc, 'inc', 'edit-cats-inc'); rendCatEdit(catsExp, 'exp', 'edit-cats-exp');
     }
 
-    function updateCharts(mStats, selM) {
+    function updateCharts(mStats, selM, yearRecords) {
         const standardOptions = { 
             responsive: true, 
             maintainAspectRatio: false,
@@ -255,7 +263,7 @@
         if(cMain) cMain.destroy();
         cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: standardOptions });
         
-        const avgData = catsExp.map(c => ({ n: c.n, v: records.filter(r => r.category === c.n).reduce((s,r)=>s+r.amount,0) / 12 }));
+        const avgData = catsExp.map(c => ({ n: c.n, v: yearRecords.filter(r => r.category === c.n).reduce((s,r)=>s+r.amount,0) / 12 }));
         
         if(cAvg) cAvg.destroy();
         cAvg = new Chart(document.getElementById('avgExpChart'), { type: 'bar', data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: '#3498db' }] }, options: standardOptions });
@@ -273,12 +281,12 @@
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } } } } 
         });
         
-        const realInc = records.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
+        const realInc = yearRecords.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
         const prevInc = catsInc.reduce((s,c)=>s+c.b, 0);
         if(cMInc) cMInc.destroy();
         cMInc = new Chart(document.getElementById('mChartInc'), { type: 'bar', data: { labels: ['Previsto', 'Reale'], datasets: [{ data: [prevInc, realInc], backgroundColor: ['#3498db', '#27ae60'] }] }, options: standardOptions });
         
-        const realExp = records.filter(r => r.type === 'Uscita' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
+        const realExp = yearRecords.filter(r => r.type === 'Uscita' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
         const prevExp = catsExp.reduce((s,c)=>s+c.b, 0);
         if(cMExp) cMExp.destroy();
         cMExp = new Chart(document.getElementById('mChartExp'), { type: 'bar', data: { labels: ['Previsto', 'Reale'], datasets: [{ data: [prevExp, realExp], backgroundColor: ['#3498db', '#e74c3c'] }] }, options: standardOptions });
@@ -295,6 +303,16 @@
     async function delRecord(id) { if(confirm("Eliminare questo movimento?")) { records = records.filter(r=>r.id!==id); render(); await saveToCloud(); } }
 
     window.onload = () => {
+        const currentYear = new Date().getFullYear();
+        const yearSel = document.getElementById('year-selector');
+        // Popola selettore anni dal 2024 al 2030
+        for(let y = 2024; y <= 2030; y++) {
+            const opt = document.createElement('option');
+            opt.value = y; opt.text = y;
+            if(y === currentYear) opt.selected = true;
+            yearSel.appendChild(opt);
+        }
+
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
         const mf = document.getElementById('month-filter'); const fm = document.getElementById('f-month');
         months.forEach((m,i) => { const opt = `<option value="${i}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`; mf.innerHTML += opt; fm.innerHTML += `<option value="${i}">${m}</option>`; });
