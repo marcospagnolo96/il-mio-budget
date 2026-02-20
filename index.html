@@ -26,8 +26,9 @@
         .table-container { background: white; padding: 10px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         table th, table td { border: 1px solid #ddd !important; padding: 8px; text-align: center; }
-        .table-annual { font-size: 0.75rem; table-layout: fixed; }
-        .row-label { text-align: left !important; font-weight: bold; width: 110px; background: #fdfdfd; }
+        .table-annual { font-size: 0.7rem; table-layout: fixed; }
+        .row-label { text-align: left !important; font-weight: bold; width: 110px; background: #fdfdfd; position: sticky; left: 0; }
+        .col-avg { background: #f0f7ff; font-weight: bold; color: var(--info); }
         .val-inc { color: var(--success); font-weight: bold; }
         .val-exp { color: var(--danger); font-weight: bold; }
         .chart-box { height: 280px; background: white; border-radius: 10px; padding: 10px; margin-bottom: 15px; border: 1px solid #eee; }
@@ -68,6 +69,13 @@
         <div class="chart-box"><canvas id="mainChart"></canvas></div>
         <h3>📊 Bilancio Annuale</h3>
         <div class="table-container"><table class="table-annual"><thead><tr id="h-sum"></tr></thead><tbody id="b-sum"></tbody></table></div>
+        
+        <h3>📈 Entrate per Categoria</h3>
+        <div class="table-container"><table class="table-annual"><thead><tr id="h-inc"></tr></thead><tbody id="b-inc"></tbody></table></div>
+        
+        <h3>📉 Uscite per Categoria</h3>
+        <div class="table-container"><table class="table-annual"><thead><tr id="h-exp"></tr></thead><tbody id="b-exp"></tbody></table></div>
+
         <h3>📉 Spesa Media per Categoria (Mensile)</h3>
         <div class="chart-box"><canvas id="avgExpChart"></canvas></div>
     </div>
@@ -127,7 +135,6 @@
     async function handleAuthClick() { tokenClient.callback = async (resp) => { document.getElementById('auth-screen').style.display = 'none'; await syncData(); }; tokenClient.requestAccessToken({prompt: 'consent'}); }
     
     async function syncData() {
-        document.getElementById('sync-status').innerText = "🔄 Caricamento...";
         const response = await gapi.client.drive.files.list({ q: "name = 'wallet_2026_data.json' and trashed = false" });
         if (response.result.files.length > 0) {
             fileId = response.result.files[0].id;
@@ -139,7 +146,6 @@
     }
 
     async function saveToCloud(isNew = false) {
-        document.getElementById('sync-status').innerText = "🔄 Salvataggio...";
         const content = JSON.stringify({records, catsInc, catsExp});
         if (isNew) {
             const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=media', { method: 'POST', headers: { 'Authorization': 'Bearer ' + gapi.client.getToken().access_token, 'Content-Type': 'application/json' }, body: content });
@@ -160,18 +166,35 @@
     function render() {
         const selM = parseInt(document.getElementById('month-filter').value);
         updateCatDropdown();
-        const rendCatEdit = (list, type, divId) => { document.getElementById(divId).innerHTML = list.map((c, i) => `<div class="cat-item"><span style="flex:1">${c.n}</span><input type="number" value="${c.b}" onchange="updateBudget('${type}', ${i}, this.value)"></div>`).join(''); };
-        rendCatEdit(catsInc, 'inc', 'edit-cats-inc'); rendCatEdit(catsExp, 'exp', 'edit-cats-exp');
+        
+        const hHTML = '<th class="row-label">Cat</th>' + months.map(m => `<th>${m.substring(0,3)}</th>`).join('') + '<th>TOT</th><th class="col-avg">MED</th>';
+        document.getElementById('h-sum').innerHTML = hHTML;
+        document.getElementById('h-inc').innerHTML = hHTML;
+        document.getElementById('h-exp').innerHTML = hHTML;
 
-        const hSum = document.getElementById('h-sum');
-        hSum.innerHTML = '<th class="row-label">Voce</th>' + months.map(m => `<th>${m.substring(0,3)}</th>`).join('') + '<th>TOT</th>';
         let mStats = months.map((_, i) => ({
             inc: records.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0),
             exp: records.filter(r => r.type === 'Uscita' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0)
         }));
-        const bSum = document.getElementById('b-sum');
-        const row = (lbl, data, cls) => `<tr><td class="row-label">${lbl}</td>${data.map(v => `<td class="${cls}">${v.toFixed(0)}</td>`).join('')}<td style="font-weight:bold">${data.reduce((a,b)=>a+b,0).toFixed(0)}</td></tr>`;
-        bSum.innerHTML = row('Entrate', mStats.map(s=>s.inc), 'val-inc') + row('Uscite', mStats.map(s=>s.exp), 'val-exp') + row('Saldo', mStats.map(s=>s.inc-s.exp), '');
+
+        const buildRow = (lbl, data, cls) => {
+            const tot = data.reduce((a,b)=>a+b,0);
+            const avg = tot / 12;
+            return `<tr><td class="row-label">${lbl}</td>${data.map(v => `<td class="${cls}">${v.toFixed(0)}</td>`).join('')}<td style="font-weight:bold">${tot.toFixed(0)}</td><td class="col-avg">${avg.toFixed(0)}</td></tr>`;
+        };
+
+        document.getElementById('b-sum').innerHTML = buildRow('Entrate', mStats.map(s=>s.inc), 'val-inc') + buildRow('Uscite', mStats.map(s=>s.exp), 'val-exp') + buildRow('Saldo', mStats.map(s=>s.inc-s.exp), '');
+
+        const buildCatTable = (cats, type, bodyId) => {
+            let html = '';
+            cats.forEach(c => {
+                let rowData = months.map((_, i) => records.filter(r => r.type === type && r.category === c.n && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0));
+                html += buildRow(c.n, rowData, type === 'Entrata' ? 'val-inc' : 'val-exp');
+            });
+            document.getElementById(bodyId).innerHTML = html;
+        };
+        buildCatTable(catsInc, 'Entrata', 'b-inc');
+        buildCatTable(catsExp, 'Uscita', 'b-exp');
 
         const buildMTable = (list, type, bodyId) => {
             const body = document.getElementById(bodyId); body.innerHTML = '';
@@ -190,22 +213,20 @@
         document.getElementById('history-body').innerHTML = filtered.slice().reverse().map(r => `<tr><td>${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}</td><td>${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td>€${r.amount}</td><td><button onclick="delRecord(${r.id})">🗑️</button></td></tr>`).join('');
         
         updateCharts(mStats, selM);
+        const rendCatEdit = (list, type, divId) => { document.getElementById(divId).innerHTML = list.map((c, i) => `<div class="cat-item"><span style="flex:1">${c.n}</span><input type="number" value="${c.b}" onchange="updateBudget('${type}', ${i}, this.value)"></div>`).join(''); };
+        rendCatEdit(catsInc, 'inc', 'edit-cats-inc'); rendCatEdit(catsExp, 'exp', 'edit-cats-exp');
     }
 
     function updateCharts(mStats, selM) {
         if(cMain) cMain.destroy();
         cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ label: 'Saldo', data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: { responsive: true, maintainAspectRatio: false } });
-
         const avgData = catsExp.map(c => ({ n: c.n, v: records.filter(r => r.category === c.n).reduce((s,r)=>s+r.amount,0) / 12 }));
         if(cAvg) cAvg.destroy();
         cAvg = new Chart(document.getElementById('avgExpChart'), { type: 'bar', data: { labels: avgData.map(d=>d.n), datasets: [{ label: 'Media Mensile (€)', data: avgData.map(d=>d.v), backgroundColor: '#3498db' }] }, options: { responsive: true, maintainAspectRatio: false } });
-
-        // Grafici Mensili
         const realInc = records.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
         const prevInc = catsInc.reduce((s,c)=>s+c.b, 0);
         if(cMInc) cMInc.destroy();
         cMInc = new Chart(document.getElementById('mChartInc'), { type: 'bar', data: { labels: ['Previsto', 'Reale'], datasets: [{ data: [prevInc, realInc], backgroundColor: ['#3498db', '#27ae60'] }] }, options: { responsive: true, maintainAspectRatio: false } });
-
         const realExp = records.filter(r => r.type === 'Uscita' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
         const prevExp = catsExp.reduce((s,c)=>s+c.b, 0);
         if(cMExp) cMExp.destroy();
