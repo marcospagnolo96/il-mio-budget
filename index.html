@@ -11,25 +11,34 @@
     <style>
         :root { --primary: #2c3e50; --success: #27ae60; --danger: #e74c3c; --info: #3498db; --bg: #f8f9fa; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        .sidebar { width: 300px; background: white; padding: 20px; border-right: 1px solid #ddd; display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
-        .nav-btn { padding: 12px; margin-bottom: 5px; border: none; background: #eee; text-align: left; cursor: pointer; font-weight: bold; border-radius: 8px; }
+        
+        /* Sidebar ottimizzata per eliminare lo scroll */
+        .sidebar { width: 260px; background: white; padding: 10px 15px; border-right: 1px solid #ddd; display: flex; flex-direction: column; flex-shrink: 0; font-size: 0.85rem; }
+        .sidebar h2 { margin: 5px 0; font-size: 1.1rem; }
+        .nav-btn { padding: 8px 12px; margin-bottom: 3px; border: none; background: #eee; text-align: left; cursor: pointer; font-weight: bold; border-radius: 6px; font-size: 0.8rem; }
         .nav-btn.active { background: var(--primary); color: white; }
         
-        /* Contenitore e stile per i bottoni Excel */
-        .excel-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 15px; }
-        .btn-excel { flex: 1; padding: 10px; background: #1d6f42; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-align: center; font-size: 0.75rem; }
+        .excel-actions { display: flex; gap: 5px; margin-top: auto; padding-top: 10px; padding-bottom: 5px; }
+        .btn-excel { flex: 1; padding: 8px; background: #1d6f42; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-align: center; font-size: 0.7rem; }
         .btn-import { background: #3498db; }
         
         .main-content { flex: 1; padding: 20px; overflow-y: auto; }
         .page { display: none; }
         .page.active { display: block; }
-        .form-box { background: #fdfdfd; padding: 15px; border-radius: 10px; border: 1px solid #ddd; margin-top: 15px; }
-        .type-selector { display: flex; gap: 8px; margin-bottom: 12px; }
-        .type-btn { flex: 1; padding: 10px; border: 2px solid #ddd; background: white; cursor: pointer; font-weight: bold; border-radius: 8px; font-size: 0.8rem; }
+        
+        .form-box { background: #fdfdfd; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-top: 8px; }
+        .form-box h4 { margin: 0 0 8px 0; font-size: 0.9rem; }
+        .type-selector { display: flex; gap: 5px; margin-bottom: 8px; }
+        .type-btn { flex: 1; padding: 6px; border: 2px solid #ddd; background: white; cursor: pointer; font-weight: bold; border-radius: 6px; font-size: 0.7rem; }
         .type-btn.inc-active { border-color: var(--success); color: var(--success); background: #eafaf1; }
         .type-btn.exp-active { border-color: var(--danger); color: var(--danger); background: #fdf2f2; }
-        input, select, .btn-save { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; margin-bottom: 8px; }
-        .btn-save { background: var(--primary); color: white; font-weight: bold; cursor: pointer; border: none; }
+        
+        input, select, .btn-save { width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; margin-bottom: 6px; font-size: 0.8rem; }
+        .btn-save { background: var(--primary); color: white; font-weight: bold; cursor: pointer; border: none; margin-top: 2px; }
+        
+        #sync-status { font-size: 0.65rem; color: #7f8c8d; text-align: center; margin-bottom: 5px; }
+        
+        /* Resto degli stili invariato */
         .table-container { background: white; padding: 10px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         table th, table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
@@ -48,7 +57,6 @@
         .btn-x { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; padding: 0px; line-height: 1; }
         .btn-edit { background: none; border: none; color: var(--info); cursor: pointer; font-size: 1rem; padding: 0px 8px; line-height: 1; }
         .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #sync-status { font-size: 0.7rem; color: #7f8c8d; text-align: center; margin-top: 10px; }
         .chart-row { display: flex; gap: 15px; margin-bottom: 15px; }
         .chart-row .chart-box { flex: 1; }
     </style>
@@ -61,10 +69,12 @@
 </div>
 
 <aside class="sidebar">
-    <h2>📊 Wallet <select id="year-selector" onchange="render()" style="width: auto; font-size: 1.2rem; border: none; background: transparent; font-weight: bold; cursor: pointer;"></select></h2>
+    <h2>📊 Wallet <select id="year-selector" onchange="render()" style="width: auto; font-size: 1rem; border: none; background: transparent; font-weight: bold; cursor: pointer;"></select></h2>
+    
     <button class="nav-btn active" onclick="showPage('dashboard', this)">Riepilogo Annuale</button>
     <button class="nav-btn" onclick="showPage('monthly', this)">Vista Mensile</button>
     <button class="nav-btn" onclick="showPage('history', this)">Lista & Categorie</button>
+    
     <div id="sync-status">Connessione...</div>
 
     <div class="form-box">
@@ -78,7 +88,7 @@
         <select id="cat-select"></select>
         <input type="number" id="amount" step="0.01" placeholder="Importo €">
         <input type="hidden" id="edit-id">
-        <button id="btn-save-main" class="btn-save" onclick="addRecord()">SALVA MOVIMENTO</button>
+        <button id="btn-save-main" class="btn-save" onclick="addRecord()">SALVA</button>
     </div>
 
     <div class="excel-actions">
@@ -359,7 +369,7 @@
         if(editId) { records = records.filter(r => r.id != editId); }
         records.push({ id: editId ? parseInt(editId) : Date.now(), type: currentType, date: document.getElementById('date').value, desc: document.getElementById('desc').value, category: document.getElementById('cat-select').value, amount: amt });
         document.getElementById('amount').value=''; document.getElementById('desc').value=''; document.getElementById('edit-id').value='';
-        document.getElementById('form-title').innerText = 'Nuovo Movimento'; document.getElementById('btn-save-main').innerText = 'SALVA MOVIMENTO';
+        document.getElementById('form-title').innerText = 'Nuovo Movimento'; document.getElementById('btn-save-main').innerText = 'SALVA';
         render(); await saveToCloud();
     }
 
@@ -368,7 +378,7 @@
         if(!r) return;
         document.getElementById('edit-id').value = r.id; document.getElementById('date').value = r.date; document.getElementById('desc').value = r.desc; document.getElementById('amount').value = r.amount;
         setType(r.type); document.getElementById('cat-select').value = r.category;
-        document.getElementById('form-title').innerText = 'Modifica Movimento'; document.getElementById('btn-save-main').innerText = 'AGGIORNA MOVIMENTO';
+        document.getElementById('form-title').innerText = 'Modifica'; document.getElementById('btn-save-main').innerText = 'AGGIORNA';
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
