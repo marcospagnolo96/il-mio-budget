@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wallet Cloud Multi-Year</title>
+    <title>Wallet Cloud Multi-Year Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
@@ -193,48 +193,43 @@
     function importFromExcel(input) {
         const file = input.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type: 'array'});
+            const workbook = XLSX.read(data, {type: 'array', cellDates: true});
             const sheetName = workbook.SheetNames[0];
             const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
             let importedCount = 0;
+
             json.forEach(row => {
-                const dateParts = (row['Data'] || "").split('/');
-                if (dateParts.length === 3) {
-                    const formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                let formattedDate = "";
+                let rawDate = row['Data'];
+                if (!rawDate) return;
+
+                if (rawDate instanceof Date) {
+                    formattedDate = rawDate.toISOString().split('T')[0];
+                } else if (typeof rawDate === 'string' && rawDate.includes('/')) {
+                    const parts = rawDate.split('/');
+                    if (parts.length === 3) formattedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                } else if (!isNaN(rawDate)) {
+                    const d = new Date((rawDate - 25569) * 86400 * 1000);
+                    formattedDate = d.toISOString().split('T')[0];
+                }
+
+                if (formattedDate) {
                     const type = row['Tipo'] || 'Uscita';
                     const category = row['Categoria'] || 'Varie';
-
-                    // CREAZIONE AUTOMATICA CATEGORIA MANCANTE
                     if (type === 'Entrata') {
                         if (!catsInc.find(c => c.n === category)) catsInc.push({ n: category, b: 0 });
                     } else {
                         if (!catsExp.find(c => c.n === category)) catsExp.push({ n: category, b: 0 });
                     }
-
-                    records.push({
-                        id: Date.now() + importedCount,
-                        type: type,
-                        date: formattedDate,
-                        desc: row['Descrizione'] || '',
-                        category: category,
-                        amount: parseFloat(row['Importo €']) || 0
-                    });
+                    records.push({ id: Date.now() + importedCount, type: type, date: formattedDate, desc: row['Descrizione'] || '', category: category, amount: parseFloat(row['Importo €']) || 0 });
                     importedCount++;
                 }
             });
-
-            if (importedCount > 0) {
-                alert(`Importati con successo ${importedCount} movimenti e aggiornate le categorie.`);
-                render();
-                saveToCloud();
-            } else {
-                alert("Nessun dato valido trovato.");
-            }
+            if (importedCount > 0) { alert(`Importati ${importedCount} movimenti.`); render(); saveToCloud(); }
+            else { alert("Errore: Formato dati non riconosciuto."); }
             input.value = "";
         };
         reader.readAsArrayBuffer(file);
@@ -251,28 +246,22 @@
         const selYear = document.getElementById('year-selector').value;
         const selM = parseInt(document.getElementById('month-filter').value);
         const yearRecords = records.filter(r => new Date(r.date).getFullYear().toString() === selYear);
-
         updateCatDropdown();
         const fCat = document.getElementById('f-cat');
         const currentFCat = fCat.value;
         fCat.innerHTML = '<option value="">Tutte le categorie</option>' + [...catsInc, ...catsExp].map(c => `<option value="${c.n}">${c.n}</option>`).join('');
         fCat.value = currentFCat;
-
         const hHTML = '<th class="row-label">Cat</th>' + months.map(m => `<th>${m.substring(0,3)}</th>`).join('') + '<th>TOT</th><th class="col-avg">MED</th>';
         document.getElementById('h-sum').innerHTML = hHTML; document.getElementById('h-inc').innerHTML = hHTML; document.getElementById('h-exp').innerHTML = hHTML;
-
         let mStats = months.map((_, i) => ({
             inc: yearRecords.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0),
             exp: yearRecords.filter(r => r.type === 'Uscita' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0)
         }));
-
         const buildRow = (lbl, data, cls) => {
-            const tot = data.reduce((a,b)=>a+b,0);
-            const avg = tot / 12;
+            const tot = data.reduce((a,b)=>a+b,0); const avg = tot / 12;
             return `<tr><td class="row-label">${lbl}</td>${data.map(v => `<td class="${cls}">${v.toFixed(0)}€</td>`).join('')}<td style="font-weight:bold">${tot.toFixed(0)}€</td><td class="col-avg">${avg.toFixed(0)}€</td></tr>`;
         };
         document.getElementById('b-sum').innerHTML = buildRow('Entrate', mStats.map(s=>s.inc), 'val-inc') + buildRow('Uscite', mStats.map(s=>s.exp), 'val-exp') + buildRow('Saldo', mStats.map(s=>s.inc-s.exp), '');
-
         const buildCatTable = (cats, type, bodyId) => {
             let html = '';
             cats.forEach(c => {
@@ -282,7 +271,6 @@
             document.getElementById(bodyId).innerHTML = html;
         };
         buildCatTable(catsInc, 'Entrata', 'b-inc'); buildCatTable(catsExp, 'Uscita', 'b-exp');
-
         const buildMTable = (list, type, bodyId) => {
             const body = document.getElementById(bodyId); body.innerHTML = '';
             list.forEach(c => {
@@ -292,25 +280,16 @@
             });
         };
         buildMTable(catsInc, 'Entrata', 'm-inc-body'); buildMTable(catsExp, 'Uscita', 'm-exp-body');
-
-        const fS = document.getElementById('f-search').value.toLowerCase();
-        const fM = document.getElementById('f-month').value;
-        const fT = document.getElementById('f-type').value;
-        const fC = document.getElementById('f-cat').value;
+        const fS = document.getElementById('f-search').value.toLowerCase(); const fM = document.getElementById('f-month').value; const fT = document.getElementById('f-type').value; const fC = document.getElementById('f-cat').value;
         const filtered = yearRecords.filter(r => r.desc.toLowerCase().includes(fS) && (fM==="" || new Date(r.date).getMonth()==fM) && (fT==="" || r.type===fT) && (fC==="" || r.category===fC));
         document.getElementById('history-body').innerHTML = filtered.slice().reverse().map(r => `<tr><td style="text-align:left">${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">${r.amount}€</td><td style="text-align:right"><button class="btn-x" onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
-        
         updateCharts(mStats, selM, yearRecords);
         const rendCatEdit = (list, type, divId) => { document.getElementById(divId).innerHTML = list.map((c, i) => `<div class="cat-item"><span>${c.n}</span><label style="font-size:0.7rem">Budget:</label><input type="number" value="${c.b}" onchange="updateBudget('${type}', ${i}, this.value)"><button class="btn-del-cat" onclick="delCat('${type}', ${i})">✕</button></div>`).join(''); };
         rendCatEdit(catsInc, 'inc', 'edit-cats-inc'); rendCatEdit(catsExp, 'exp', 'edit-cats-exp');
     }
 
     function updateCharts(mStats, selM, yearRecords) {
-        const standardOptions = { 
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true, ticks: { callback: v => v + '€' } } }
-        };
+        const standardOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => v + '€' } } } };
         if(cMain) cMain.destroy();
         cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: standardOptions });
         const avgData = catsExp.map(c => ({ n: c.n, v: yearRecords.filter(r => r.category === c.n).reduce((s,r)=>s+r.amount,0) / 12 }));
