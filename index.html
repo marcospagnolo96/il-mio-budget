@@ -25,7 +25,9 @@
         .btn-save { background: var(--primary); color: white; font-weight: bold; cursor: pointer; border: none; }
         .table-container { background: white; padding: 10px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-        table th, table td { border: 1px solid #ddd !important; padding: 8px; text-align: center; }
+        table th, table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        /* Storico senza linee */
+        .no-lines td, .no-lines th { border: none !important; }
         .table-annual { font-size: 0.7rem; table-layout: fixed; }
         .row-label { text-align: left !important; font-weight: bold; width: 110px; background: #fdfdfd; position: sticky; left: 0; }
         .col-avg { background: #f0f7ff; font-weight: bold; color: var(--info); }
@@ -33,7 +35,11 @@
         .val-exp { color: var(--danger); font-weight: bold; }
         .chart-box { height: 280px; background: white; border-radius: 10px; padding: 10px; margin-bottom: 15px; border: 1px solid #eee; }
         .cat-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; background: #f9f9f9; padding: 8px; border-radius: 5px; border: 1px solid #eee; }
-        .cat-item input { width: 80px; margin-bottom: 0; }
+        .cat-item input { width: 70px; margin-bottom: 0; }
+        .btn-del-cat { background: none; border: none; color: #999; cursor: pointer; font-weight: bold; padding: 0 5px; }
+        .btn-del-cat:hover { color: var(--danger); }
+        .btn-x { background: none; border: none; color: #ccc; cursor: pointer; font-size: 1.1rem; padding: 5px; }
+        .btn-x:hover { color: var(--danger); }
         .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #sync-status { font-size: 0.7rem; color: #7f8c8d; text-align: center; margin-top: 10px; }
     </style>
@@ -114,7 +120,7 @@
             <select id="f-type" onchange="render()" style="width:100px; margin-bottom:0"><option value="">Tutti i tipi</option><option value="Entrata">Entrate</option><option value="Uscita">Uscite</option></select>
             <select id="f-cat" onchange="render()" style="width:150px; margin-bottom:0"><option value="">Tutte le categorie</option></select>
         </div>
-        <div class="table-container"><table><thead><tr><th>Data</th><th>Desc</th><th>Cat</th><th>Tipo</th><th>Importo</th><th>Az.</th></tr></thead><tbody id="history-body"></tbody></table></div>
+        <div class="table-container"><table class="no-lines"><thead><tr><th style="text-align:left">Data</th><th style="text-align:left">Descrizione</th><th style="text-align:left">Cat</th><th style="text-align:center">Tipo</th><th style="text-align:right">Importo</th><th style="text-align:right"></th></tr></thead><tbody id="history-body"></tbody></table></div>
     </div>
 </main>
 
@@ -160,12 +166,11 @@
         if(input.value) { if(type==='inc') catsInc.push({n: input.value, b: 0}); else catsExp.push({n: input.value, b: 0}); input.value = ''; render(); saveToCloud(); }
     }
     function updateBudget(type, idx, val) { if(type==='inc') catsInc[idx].b = parseFloat(val) || 0; else catsExp[idx].b = parseFloat(val) || 0; saveToCloud(); }
+    async function delCat(type, idx) { if(confirm("Eliminare questa categoria?")) { if(type==='inc') catsInc.splice(idx, 1); else catsExp.splice(idx, 1); render(); await saveToCloud(); } }
 
     function render() {
         const selM = parseInt(document.getElementById('month-filter').value);
         updateCatDropdown();
-        
-        // Update filter category dropdown
         const fCat = document.getElementById('f-cat');
         const currentFCat = fCat.value;
         fCat.innerHTML = '<option value="">Tutte le categorie</option>' + [...catsInc, ...catsExp].map(c => `<option value="${c.n}">${c.n}</option>`).join('');
@@ -186,7 +191,6 @@
             const avg = tot / 12;
             return `<tr><td class="row-label">${lbl}</td>${data.map(v => `<td class="${cls}">${v.toFixed(0)}</td>`).join('')}<td style="font-weight:bold">${tot.toFixed(0)}</td><td class="col-avg">${avg.toFixed(0)}</td></tr>`;
         };
-
         document.getElementById('b-sum').innerHTML = buildRow('Entrate', mStats.map(s=>s.inc), 'val-inc') + buildRow('Uscite', mStats.map(s=>s.exp), 'val-exp') + buildRow('Saldo', mStats.map(s=>s.inc-s.exp), '');
 
         const buildCatTable = (cats, type, bodyId) => {
@@ -197,8 +201,7 @@
             });
             document.getElementById(bodyId).innerHTML = html;
         };
-        buildCatTable(catsInc, 'Entrata', 'b-inc');
-        buildCatTable(catsExp, 'Uscita', 'b-exp');
+        buildCatTable(catsInc, 'Entrata', 'b-inc'); buildCatTable(catsExp, 'Uscita', 'b-exp');
 
         const buildMTable = (list, type, bodyId) => {
             const body = document.getElementById(bodyId); body.innerHTML = '';
@@ -215,10 +218,10 @@
         const fT = document.getElementById('f-type').value;
         const fC = document.getElementById('f-cat').value;
         const filtered = records.filter(r => r.desc.toLowerCase().includes(fS) && (fM==="" || new Date(r.date).getMonth()==fM) && (fT==="" || r.type===fT) && (fC==="" || r.category===fC));
-        document.getElementById('history-body').innerHTML = filtered.slice().reverse().map(r => `<tr><td>${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}</td><td>${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td>€${r.amount}</td><td><button onclick="delRecord(${r.id})">🗑️</button></td></tr>`).join('');
+        document.getElementById('history-body').innerHTML = filtered.slice().reverse().map(r => `<tr><td style="text-align:left">${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">€${r.amount}</td><td style="text-align:right"><button class="btn-x" onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
         
         updateCharts(mStats, selM);
-        const rendCatEdit = (list, type, divId) => { document.getElementById(divId).innerHTML = list.map((c, i) => `<div class="cat-item"><span style="flex:1">${c.n}</span><input type="number" value="${c.b}" onchange="updateBudget('${type}', ${i}, this.value)"></div>`).join(''); };
+        const rendCatEdit = (list, type, divId) => { document.getElementById(divId).innerHTML = list.map((c, i) => `<div class="cat-item"><span style="flex:1">${c.n}</span><input type="number" value="${c.b}" onchange="updateBudget('${type}', ${i}, this.value)"><button class="btn-del-cat" onclick="delCat('${type}', ${i})">✕</button></div>`).join(''); };
         rendCatEdit(catsInc, 'inc', 'edit-cats-inc'); rendCatEdit(catsExp, 'exp', 'edit-cats-exp');
     }
 
@@ -246,7 +249,7 @@
         records.push({ id: Date.now(), type: currentType, date: document.getElementById('date').value, desc: document.getElementById('desc').value, category: document.getElementById('cat-select').value, amount: amt });
         document.getElementById('amount').value=''; document.getElementById('desc').value=''; render(); await saveToCloud();
     }
-    async function delRecord(id) { if(confirm("Elimina?")) { records = records.filter(r=>r.id!==id); render(); await saveToCloud(); } }
+    async function delRecord(id) { if(confirm("Eliminare questo movimento?")) { records = records.filter(r=>r.id!==id); render(); await saveToCloud(); } }
 
     window.onload = () => {
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
