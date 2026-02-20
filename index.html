@@ -12,7 +12,6 @@
         :root { --primary: #2c3e50; --success: #27ae60; --danger: #e74c3c; --info: #3498db; --bg: #f8f9fa; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* Sidebar ottimizzata per eliminare lo scroll */
         .sidebar { width: 260px; background: white; padding: 10px 15px; border-right: 1px solid #ddd; display: flex; flex-direction: column; flex-shrink: 0; font-size: 0.85rem; }
         .sidebar h2 { margin: 5px 0; font-size: 1.1rem; }
         .nav-btn { padding: 8px 12px; margin-bottom: 3px; border: none; background: #eee; text-align: left; cursor: pointer; font-weight: bold; border-radius: 6px; font-size: 0.8rem; }
@@ -38,7 +37,6 @@
         
         #sync-status { font-size: 0.65rem; color: #7f8c8d; text-align: center; margin-bottom: 5px; }
         
-        /* Resto degli stili invariato */
         .table-container { background: white; padding: 10px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         table th, table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
@@ -120,12 +118,12 @@
             <div style="flex:1; min-width: 300px;">
                 <h4 class="val-inc">Entrate: Previsto vs Reale</h4>
                 <div class="chart-box"><canvas id="mChartInc"></canvas></div>
-                <div class="table-container"><table class="no-lines"><thead><tr><th style="text-align:left">Cat</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-inc-body"></tbody></table></div>
+                <div class="table-container"><table class="no-lines"><thead><tr><th style="text-align:left">Categoria</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-inc-body"></tbody></table></div>
             </div>
             <div style="flex:1; min-width: 300px;">
                 <h4 class="val-exp">Uscite: Previsto vs Reale</h4>
                 <div class="chart-box"><canvas id="mChartExp"></canvas></div>
-                <div class="table-container"><table class="no-lines"><thead><tr><th style="text-align:left">Cat</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-exp-body"></tbody></table></div>
+                <div class="table-container"><table class="no-lines"><thead><tr><th style="text-align:left">Categoria</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-exp-body"></tbody></table></div>
             </div>
         </div>
     </div>
@@ -151,7 +149,7 @@
             <select id="f-type" onchange="render()" style="width:100px; margin-bottom:0"><option value="">Tutti i tipi</option><option value="Entrata">Entrate</option><option value="Uscita">Uscite</option></select>
             <select id="f-cat" onchange="render()" style="width:150px; margin-bottom:0"><option value="">Tutte le categorie</option></select>
         </div>
-        <div class="table-container"><table class="no-lines"><thead><tr><th style="text-align:left">Data</th><th style="text-align:left">Descrizione</th><th style="text-align:left">Cat</th><th style="text-align:center">Tipo</th><th style="text-align:right">Importo</th><th style="text-align:right">Azioni</th></tr></thead><tbody id="history-body"></tbody></table></div>
+        <div class="table-container"><table class="no-lines"><thead><tr><th style="text-align:left">Data</th><th style="text-align:left">Descrizione</th><th style="text-align:left">Categoria</th><th style="text-align:center">Tipo</th><th style="text-align:right">Importo</th><th style="text-align:right">Azioni</th></tr></thead><tbody id="history-body"></tbody></table></div>
     </div>
 </main>
 
@@ -178,13 +176,17 @@
         if (response.result.files.length > 0) {
             fileId = response.result.files[0].id;
             const res = await gapi.client.drive.files.get({ fileId: fileId, alt: 'media' });
-            records = res.result.records || []; catsInc = res.result.catsInc || catsInc; catsExp = res.result.catsExp || catsExp;
+            records = res.result.records || []; 
+            catsInc = (res.result.catsInc || catsInc).sort((a,b) => a.n.localeCompare(b.n)); 
+            catsExp = (res.result.catsExp || catsExp).sort((a,b) => a.n.localeCompare(b.n));
         } else { await saveToCloud(true); }
         document.getElementById('sync-status').innerText = "✅ Cloud Sincronizzato";
         render();
     }
 
     async function saveToCloud(isNew = false) {
+        catsInc.sort((a,b) => a.n.localeCompare(b.n));
+        catsExp.sort((a,b) => a.n.localeCompare(b.n));
         const content = JSON.stringify({records, catsInc, catsExp});
         if (isNew) {
             const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=media', { method: 'POST', headers: { 'Authorization': 'Bearer ' + gapi.client.getToken().access_token, 'Content-Type': 'application/json' }, body: content });
@@ -245,7 +247,7 @@
                     importedCount++;
                 }
             });
-            if (importedCount > 0) { alert(`Importati ${importedCount} movimenti.`); render(); saveToCloud(); }
+            if (importedCount > 0) { alert(`Importati ${importedCount} movimenti.`); catsInc.sort((a,b)=>a.n.localeCompare(b.n)); catsExp.sort((a,b)=>a.n.localeCompare(b.n)); render(); saveToCloud(); }
             else { alert("Errore: Formato dati non riconosciuto."); }
             input.value = "";
         };
@@ -254,7 +256,12 @@
 
     function addCat(type) {
         const input = document.getElementById(type === 'inc' ? 'new-cat-inc' : 'new-cat-exp');
-        if(input.value) { if(type==='inc') catsInc.push({n: input.value, b: 0}); else catsExp.push({n: input.value, b: 0}); input.value = ''; render(); saveToCloud(); }
+        if(input.value) { 
+            if(type==='inc') catsInc.push({n: input.value, b: 0}); else catsExp.push({n: input.value, b: 0}); 
+            catsInc.sort((a,b)=>a.n.localeCompare(b.n)); 
+            catsExp.sort((a,b)=>a.n.localeCompare(b.n));
+            input.value = ''; render(); saveToCloud(); 
+        }
     }
     function updateBudget(type, idx, val) { if(type==='inc') catsInc[idx].b = parseFloat(val) || 0; else catsExp[idx].b = parseFloat(val) || 0; saveToCloud(); }
     async function delCat(type, idx) { if(confirm("Eliminare questa categoria?")) { if(type==='inc') catsInc.splice(idx, 1); else catsExp.splice(idx, 1); render(); await saveToCloud(); } }
@@ -281,7 +288,7 @@
         fCat.innerHTML = '<option value="">Tutte le categorie</option>' + [...catsInc, ...catsExp].map(c => `<option value="${c.n}">${c.n}</option>`).join('');
         fCat.value = currentSelectedCat;
 
-        const hHTML = '<th class="row-label">Cat</th>' + months.map(m => `<th>${m.substring(0,3)}</th>`).join('') + '<th>TOT</th><th class="col-avg">MED</th>';
+        const hHTML = '<th class="row-label">Categoria</th>' + months.map(m => `<th>${m.substring(0,3)}</th>`).join('') + '<th>TOT</th><th class="col-avg">MED</th>';
         document.getElementById('h-sum').innerHTML = hHTML; document.getElementById('h-inc').innerHTML = hHTML; document.getElementById('h-exp').innerHTML = hHTML;
         
         let mStats = months.map((_, i) => ({
@@ -336,7 +343,10 @@
         
         updateCharts(mStats, selM, yearRecords, avgDivisor);
         
-        const rendCatEdit = (list, type, divId) => { document.getElementById(divId).innerHTML = list.map((c, i) => `<div class="cat-item"><span>${c.n}</span><label style="font-size:0.7rem">Budget:</label><input type="number" step="0.01" value="${c.b}" onchange="updateBudget('${type}', ${i}, this.value)"><button class="btn-del-cat" onclick="delCat('${type}', ${i})">✕</button></div>`).join(''); };
+        const rendCatEdit = (list, type, divId) => { 
+            const sortedList = [...list].sort((a,b) => a.n.localeCompare(b.n));
+            document.getElementById(divId).innerHTML = sortedList.map((c, i) => `<div class="cat-item"><span>${c.n}</span><label style="font-size:0.7rem">Budget:</label><input type="number" step="0.01" value="${c.b}" onchange="updateBudget('${type}', ${i}, this.value)"><button class="btn-del-cat" onclick="delCat('${type}', ${i})">✕</button></div>`).join(''); 
+        };
         rendCatEdit(catsInc, 'inc', 'edit-cats-inc'); rendCatEdit(catsExp, 'exp', 'edit-cats-exp');
     }
 
@@ -360,7 +370,11 @@
     }
 
     function setType(t) { currentType = t; document.getElementById('btn-inc').classList.toggle('inc-active', t === 'Entrata'); document.getElementById('btn-exp').classList.toggle('exp-active', t === 'Uscita'); updateCatDropdown(); }
-    function updateCatDropdown() { const list = currentType === 'Entrata' ? catsInc : catsExp; document.getElementById('cat-select').innerHTML = list.map(c => `<option value="${c.n}">${c.n}</option>`).join(''); }
+    function updateCatDropdown() { 
+        const list = currentType === 'Entrata' ? [...catsInc] : [...catsExp]; 
+        list.sort((a,b)=>a.n.localeCompare(b.n));
+        document.getElementById('cat-select').innerHTML = list.map(c => `<option value="${c.n}">${c.n}</option>`).join(''); 
+    }
     function showPage(id, btn) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.add('active'); btn.classList.add('active'); render(); }
     
     async function addRecord() {
