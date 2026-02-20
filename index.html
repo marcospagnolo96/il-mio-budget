@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wallet Cloud Pro 2026</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
     <style>
@@ -13,6 +14,7 @@
         .sidebar { width: 300px; background: white; padding: 20px; border-right: 1px solid #ddd; display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
         .nav-btn { padding: 12px; margin-bottom: 5px; border: none; background: #eee; text-align: left; cursor: pointer; font-weight: bold; border-radius: 8px; }
         .nav-btn.active { background: var(--primary); color: white; }
+        .btn-excel { padding: 10px; margin-top: 10px; background: #1d6f42; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-align: center; }
         .main-content { flex: 1; padding: 20px; overflow-y: auto; }
         .page { display: none; }
         .page.active { display: block; }
@@ -58,6 +60,7 @@
     <button class="nav-btn" onclick="showPage('monthly', this)">Vista Mensile</button>
     <button class="nav-btn" onclick="showPage('history', this)">Lista & Categorie</button>
     <div id="sync-status">Connessione...</div>
+    <button class="btn-excel" onclick="exportToExcel()">📊 ESPORTA EXCEL</button>
     <div class="form-box">
         <div class="type-selector">
             <button id="btn-inc" class="type-btn inc-active" onclick="setType('Entrata')">Entrata</button>
@@ -165,6 +168,20 @@
         document.getElementById('sync-status').innerText = "✅ Salvato";
     }
 
+    function exportToExcel() {
+        const data = records.map(r => ({
+            Data: r.date.split('-').reverse().join('/'),
+            Descrizione: r.desc,
+            Categoria: r.category,
+            Tipo: r.type,
+            'Importo €': r.amount
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Movimenti 2026");
+        XLSX.writeFile(workbook, "Storico_Wallet_2026.xlsx");
+    }
+
     function addCat(type) {
         const input = document.getElementById(type === 'inc' ? 'new-cat-inc' : 'new-cat-exp');
         if(input.value) { if(type==='inc') catsInc.push({n: input.value, b: 0}); else catsExp.push({n: input.value, b: 0}); input.value = ''; render(); saveToCloud(); }
@@ -199,7 +216,7 @@
             let html = '';
             cats.forEach(c => {
                 let rowData = months.map((_, i) => records.filter(r => r.type === type && r.category === c.n && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0));
-                html += buildRow(c.n, rowData, type === 'Entrata' ? 'val-inc' : 'val-exp');
+                html += buildRow(c.n, rowData, type === 'Entrata' ? 'val-inc' : 'val-inc' ? 'val-inc' : 'val-exp');
             });
             document.getElementById(bodyId).innerHTML = html;
         };
