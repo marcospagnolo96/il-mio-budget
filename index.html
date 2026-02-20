@@ -27,7 +27,6 @@
         .table-container { background: white; padding: 10px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         table th, table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        /* Tabelle senza linee e compatte */
         .no-lines td, .no-lines th { border: none !important; padding: 2px 8px !important; }
         .bold-cat { font-weight: bold; text-align: left !important; }
         .table-annual { font-size: 0.7rem; table-layout: fixed; }
@@ -231,9 +230,22 @@
             maintainAspectRatio: false,
             plugins: {
                 legend: { display: false },
-                datalabels: { color: '#000', anchor: 'end', align: 'top', formatter: (v) => v.toFixed(0) + '€', font: { weight: 'bold', size: 10 } }
+                datalabels: { 
+                    color: '#000', 
+                    anchor: 'end', 
+                    align: 'top', 
+                    formatter: (v) => v.toFixed(0) + '€', 
+                    font: { weight: 'bold', size: 10 } 
+                }
             },
-            scales: { y: { display: false } }
+            scales: { 
+                y: { 
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) { return value + '€'; }
+                    }
+                } 
+            }
         };
 
         if(cMain) cMain.destroy();
