@@ -10,17 +10,12 @@
     <style>
         :root { --primary: #2c3e50; --success: #27ae60; --danger: #e74c3c; --info: #3498db; --bg: #f8f9fa; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        
-        /* Sidebar */
         .sidebar { width: 300px; background: white; padding: 20px; border-right: 1px solid #ddd; display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
         .nav-btn { padding: 12px; margin-bottom: 5px; border: none; background: #eee; text-align: left; cursor: pointer; font-weight: bold; border-radius: 8px; }
         .nav-btn.active { background: var(--primary); color: white; }
-
         .main-content { flex: 1; padding: 20px; overflow-y: auto; }
         .page { display: none; }
         .page.active { display: block; }
-
-        /* Form */
         .form-box { background: #fdfdfd; padding: 15px; border-radius: 10px; border: 1px solid #ddd; margin-top: 15px; }
         .type-selector { display: flex; gap: 8px; margin-bottom: 12px; }
         .type-btn { flex: 1; padding: 10px; border: 2px solid #ddd; background: white; cursor: pointer; font-weight: bold; border-radius: 8px; font-size: 0.8rem; }
@@ -28,21 +23,19 @@
         .type-btn.exp-active { border-color: var(--danger); color: var(--danger); background: #fdf2f2; }
         input, select, .btn-save { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; margin-bottom: 8px; }
         .btn-save { background: var(--primary); color: white; font-weight: bold; cursor: pointer; border: none; }
-
-        /* Tabelle */
+        
+        /* Correzione Linee Tabelle */
         .table-container { background: white; padding: 10px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow-x: auto; }
-        .table-annual { width: 100%; border-collapse: collapse; font-size: 0.75rem; table-layout: fixed; }
-        .table-annual th, .table-annual td { border: 1px solid #eee; padding: 6px 2px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        table th, table td { border: 1px solid #ddd !important; padding: 8px; text-align: center; }
+        .table-annual { font-size: 0.75rem; table-layout: fixed; }
         .row-label { text-align: left !important; font-weight: bold; width: 110px; background: #fdfdfd; }
         
         .val-inc { color: var(--success); font-weight: bold; }
         .val-exp { color: var(--danger); font-weight: bold; }
         .chart-box { height: 280px; background: white; border-radius: 10px; padding: 10px; margin-bottom: 15px; border: 1px solid #eee; }
-
-        /* Categorie Edit */
-        .cat-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; background: #f9f9f9; padding: 8px; border-radius: 5px; }
+        .cat-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; background: #f9f9f9; padding: 8px; border-radius: 5px; border: 1px solid #eee; }
         .cat-item input { width: 80px; margin-bottom: 0; }
-
         .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #sync-status { font-size: 0.7rem; color: #7f8c8d; text-align: center; margin-top: 10px; }
     </style>
@@ -59,9 +52,7 @@
     <button class="nav-btn active" onclick="showPage('dashboard', this)">Riepilogo Annuale</button>
     <button class="nav-btn" onclick="showPage('monthly', this)">Vista Mensile</button>
     <button class="nav-btn" onclick="showPage('history', this)">Lista & Categorie</button>
-    
     <div id="sync-status">Connessione...</div>
-
     <div class="form-box">
         <div class="type-selector">
             <button id="btn-inc" class="type-btn inc-active" onclick="setType('Entrata')">Entrata</button>
@@ -80,7 +71,7 @@
         <div class="chart-box"><canvas id="mainChart"></canvas></div>
         <h3>📊 Bilancio Annuale</h3>
         <div class="table-container"><table class="table-annual"><thead><tr id="h-sum"></tr></thead><tbody id="b-sum"></tbody></table></div>
-        <h3>📉 Spesa Media per Categoria</h3>
+        <h3>📉 Spesa Media per Categoria (Mensile)</h3>
         <div class="chart-box"><canvas id="avgExpChart"></canvas></div>
     </div>
 
@@ -90,22 +81,12 @@
             <div style="flex:1; min-width: 300px;">
                 <h4 class="val-inc">Entrate (Azzurro = Previsto)</h4>
                 <div class="chart-box"><canvas id="mChartInc"></canvas></div>
-                <div class="table-container">
-                    <table style="width:100%">
-                        <thead><tr><th>Cat</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead>
-                        <tbody id="m-inc-body"></tbody>
-                    </table>
-                </div>
+                <div class="table-container"><table><thead><tr><th>Cat</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-inc-body"></tbody></table></div>
             </div>
             <div style="flex:1; min-width: 300px;">
                 <h4 class="val-exp">Uscite (Azzurro = Previsto)</h4>
                 <div class="chart-box"><canvas id="mChartExp"></canvas></div>
-                <div class="table-container">
-                    <table style="width:100%">
-                        <thead><tr><th>Cat</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead>
-                        <tbody id="m-exp-body"></tbody>
-                    </table>
-                </div>
+                <div class="table-container"><table><thead><tr><th>Cat</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-exp-body"></tbody></table></div>
             </div>
         </div>
     </div>
@@ -124,19 +105,13 @@
                 <div id="edit-cats-exp"></div>
             </div>
         </div>
-
         <h3>📝 Storico Movimenti</h3>
         <div class="form-box" style="display:flex; gap:10px; margin-bottom:15px; align-items: center; flex-wrap: wrap;">
             <input type="text" id="f-search" placeholder="Cerca..." oninput="render()" style="flex:1; margin-bottom:0">
             <select id="f-month" onchange="render()" style="width:120px; margin-bottom:0"><option value="">Mese...</option></select>
             <select id="f-type" onchange="render()" style="width:100px; margin-bottom:0"><option value="">Tutti</option><option value="Entrata">Entrate</option><option value="Uscita">Uscite</option></select>
         </div>
-        <div class="table-container">
-            <table style="width:100%">
-                <thead><tr><th>Data</th><th>Desc</th><th>Cat</th><th>Tipo</th><th>Importo</th><th>Az.</th></tr></thead>
-                <tbody id="history-body"></tbody>
-            </table>
-        </div>
+        <div class="table-container"><table><thead><tr><th>Data</th><th>Desc</th><th>Cat</th><th>Tipo</th><th>Importo</th><th>Az.</th></tr></thead><tbody id="history-body"></tbody></table></div>
     </div>
 </main>
 
@@ -144,38 +119,23 @@
     const CLIENT_ID = '748854814089-olhm7pebtjdn7beu9j5jt7n8hfj8pih2.apps.googleusercontent.com';
     const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest";
     const SCOPES = "https://www.googleapis.com/auth/drive.file";
-
     let tokenClient, gapiInited = false, gisInited = false, fileId = null;
     const months = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
-    
-    let records = [];
-    let catsInc = [{n: "Stipendio", b: 2000}];
-    let catsExp = [{n: "Cibo", b: 400}, {n: "Casa", b: 600}];
+    let records = [], catsInc = [{n: "Stipendio", b: 2000}], catsExp = [{n: "Cibo", b: 400}, {n: "Casa", b: 600}];
     let currentType = 'Entrata';
 
     function gapiLoaded() { gapi.load('client', async () => { await gapi.client.init({ discoveryDocs: [DISCOVERY_DOC] }); gapiInited = true; }); }
     function gisLoaded() { tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback: '' }); gisInited = true; }
-
-    async function handleAuthClick() {
-        tokenClient.callback = async (resp) => {
-            document.getElementById('auth-screen').style.display = 'none';
-            await syncData();
-        };
-        tokenClient.requestAccessToken({prompt: 'consent'});
-    }
-
+    async function handleAuthClick() { tokenClient.callback = async (resp) => { document.getElementById('auth-screen').style.display = 'none'; await syncData(); }; tokenClient.requestAccessToken({prompt: 'consent'}); }
+    
     async function syncData() {
         document.getElementById('sync-status').innerText = "🔄 Caricamento...";
         const response = await gapi.client.drive.files.list({ q: "name = 'wallet_2026_data.json' and trashed = false" });
         if (response.result.files.length > 0) {
             fileId = response.result.files[0].id;
             const res = await gapi.client.drive.files.get({ fileId: fileId, alt: 'media' });
-            records = res.result.records || [];
-            catsInc = res.result.catsInc || catsInc;
-            catsExp = res.result.catsExp || catsExp;
-        } else {
-            await saveToCloud(true);
-        }
+            records = res.result.records || []; catsInc = res.result.catsInc || catsInc; catsExp = res.result.catsExp || catsExp;
+        } else { await saveToCloud(true); }
         document.getElementById('sync-status').innerText = "✅ Cloud Sincronizzato";
         render();
     }
@@ -184,69 +144,37 @@
         document.getElementById('sync-status').innerText = "🔄 Salvataggio...";
         const content = JSON.stringify({records, catsInc, catsExp});
         if (isNew) {
-            const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=media', {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + gapi.client.getToken().access_token, 'Content-Type': 'application/json' },
-                body: content
-            });
-            const json = await res.json();
-            fileId = json.id;
+            const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=media', { method: 'POST', headers: { 'Authorization': 'Bearer ' + gapi.client.getToken().access_token, 'Content-Type': 'application/json' }, body: content });
+            const json = await res.json(); fileId = json.id;
             await gapi.client.drive.files.update({ fileId: fileId, resource: { name: 'wallet_2026_data.json' } });
         } else {
-            await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
-                method: 'PATCH',
-                headers: { 'Authorization': 'Bearer ' + gapi.client.getToken().access_token, 'Content-Type': 'application/json' },
-                body: content
-            });
+            await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + gapi.client.getToken().access_token, 'Content-Type': 'application/json' }, body: content });
         }
         document.getElementById('sync-status').innerText = "✅ Salvato";
     }
 
-    // GESTIONE CATEGORIE
     function addCat(type) {
         const input = document.getElementById(type === 'inc' ? 'new-cat-inc' : 'new-cat-exp');
-        if(input.value) {
-            if(type==='inc') catsInc.push({n: input.value, b: 0});
-            else catsExp.push({n: input.value, b: 0});
-            input.value = '';
-            render(); saveToCloud();
-        }
+        if(input.value) { if(type==='inc') catsInc.push({n: input.value, b: 0}); else catsExp.push({n: input.value, b: 0}); input.value = ''; render(); saveToCloud(); }
     }
-    function updateBudget(type, idx, val) {
-        if(type==='inc') catsInc[idx].b = parseFloat(val) || 0;
-        else catsExp[idx].b = parseFloat(val) || 0;
-        saveToCloud();
-    }
+    function updateBudget(type, idx, val) { if(type==='inc') catsInc[idx].b = parseFloat(val) || 0; else catsExp[idx].b = parseFloat(val) || 0; saveToCloud(); }
 
     function render() {
         const selM = parseInt(document.getElementById('month-filter').value);
         updateCatDropdown();
+        const rendCatEdit = (list, type, divId) => { document.getElementById(divId).innerHTML = list.map((c, i) => `<div class="cat-item"><span style="flex:1">${c.n}</span><input type="number" value="${c.b}" onchange="updateBudget('${type}', ${i}, this.value)"></div>`).join(''); };
+        rendCatEdit(catsInc, 'inc', 'edit-cats-inc'); rendCatEdit(catsExp, 'exp', 'edit-cats-exp');
 
-        // Render Edit Categorie
-        const rendCatEdit = (list, type, divId) => {
-            document.getElementById(divId).innerHTML = list.map((c, i) => `
-                <div class="cat-item">
-                    <span style="flex:1">${c.n}</span>
-                    <input type="number" value="${c.b}" onchange="updateBudget('${type}', ${i}, this.value)">
-                </div>`).join('');
-        };
-        rendCatEdit(catsInc, 'inc', 'edit-cats-inc');
-        rendCatEdit(catsExp, 'exp', 'edit-cats-exp');
-
-        // Riepilogo Annuale
         const hSum = document.getElementById('h-sum');
         hSum.innerHTML = '<th class="row-label">Voce</th>' + months.map(m => `<th>${m.substring(0,3)}</th>`).join('') + '<th>TOT</th>';
-        
         let mStats = months.map((_, i) => ({
             inc: records.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0),
             exp: records.filter(r => r.type === 'Uscita' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0)
         }));
-
         const bSum = document.getElementById('b-sum');
         const row = (lbl, data, cls) => `<tr><td class="row-label">${lbl}</td>${data.map(v => `<td class="${cls}">${v.toFixed(0)}</td>`).join('')}<td style="font-weight:bold">${data.reduce((a,b)=>a+b,0).toFixed(0)}</td></tr>`;
         bSum.innerHTML = row('Entrate', mStats.map(s=>s.inc), 'val-inc') + row('Uscite', mStats.map(s=>s.exp), 'val-exp') + row('Saldo', mStats.map(s=>s.inc-s.exp), '');
 
-        // Vista Mensile
         const buildMTable = (list, type, bodyId) => {
             const body = document.getElementById(bodyId); body.innerHTML = '';
             list.forEach(c => {
@@ -255,77 +183,47 @@
                 body.innerHTML += `<tr><td style="text-align:left">${c.n}</td><td>${c.b}</td><td>${real.toFixed(0)}</td><td style="color:${diff>=0?'green':'red'}">${diff.toFixed(0)}</td></tr>`;
             });
         };
-        buildMTable(catsInc, 'Entrata', 'm-inc-body');
-        buildMTable(catsExp, 'Uscita', 'm-exp-body');
+        buildMTable(catsInc, 'Entrata', 'm-inc-body'); buildMTable(catsExp, 'Uscita', 'm-exp-body');
 
-        // Storico con Filtri
         const fS = document.getElementById('f-search').value.toLowerCase();
         const fM = document.getElementById('f-month').value;
         const fT = document.getElementById('f-type').value;
         const filtered = records.filter(r => r.desc.toLowerCase().includes(fS) && (fM==="" || new Date(r.date).getMonth()==fM) && (fT==="" || r.type===fT));
-        
-        document.getElementById('history-body').innerHTML = filtered.slice().reverse().map(r => `
-            <tr><td>${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}</td><td>${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td>€${r.amount}</td><td><button onclick="delRecord(${r.id})">🗑️</button></td></tr>
-        `).join('');
-
+        document.getElementById('history-body').innerHTML = filtered.slice().reverse().map(r => `<tr><td>${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}</td><td>${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td>€${r.amount}</td><td><button onclick="delRecord(${r.id})">🗑️</button></td></tr>`).join('');
         updateCharts(mStats, selM);
     }
 
     function updateCharts(mStats, selM) {
-        // Main Chart
         if(window.cMain) window.cMain.destroy();
-        window.cMain = new Chart(document.getElementById('mainChart'), {
-            type: 'bar',
-            data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ label: 'Saldo Mensile', data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
+        window.cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ label: 'Saldo', data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: { responsive: true, maintainAspectRatio: false } });
 
-        // Avg Exp Chart
         const avgData = catsExp.map(c => ({ n: c.n, v: records.filter(r => r.category === c.n).reduce((s,r)=>s+r.amount,0) / 12 }));
         if(window.cAvg) window.cAvg.destroy();
-        window.cAvg = new Chart(document.getElementById('avgExpChart'), {
-            type: 'bar',
-            data: { labels: avgData.map(d=>d.n), datasets: [{ label: 'Media Mensile (€)', data: avgData.map(d=>d.v), backgroundColor: '#3498db' }] },
-            options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' }
-        });
+        window.cAvg = new Chart(document.getElementById('avgExpChart'), { type: 'bar', data: { labels: avgData.map(d=>d.n), datasets: [{ label: 'Media Mensile (€)', data: avgData.map(d=>d.v), backgroundColor: '#3498db' }] }, options: { responsive: true, maintainAspectRatio: false } });
 
-        // Mensili
-        const drawM = (id, type, totals) => {
+        const drawM = (id, type) => {
             const real = records.filter(r => r.type === type && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
             const prev = (type === 'Entrata' ? catsInc : catsExp).reduce((s,c)=>s+c.b, 0);
             if(window[id]) window[id].destroy();
-            window[id] = new Chart(document.getElementById(id), {
-                type: 'bar',
-                data: { labels: ['Previsto', 'Reale'], datasets: [{ data: [prev, real], backgroundColor: ['#3498db', type==='Entrata'?'#27ae60':'#e74c3c'] }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
+            window[id] = new Chart(document.getElementById(id), { type: 'bar', data: { labels: ['Previsto', 'Reale'], datasets: [{ data: [prev, real], backgroundColor: ['#3498db', type==='Entrata'?'#27ae60':'#e74c3c'] }] }, options: { responsive: true, maintainAspectRatio: false } });
         };
-        drawM('mChartInc', 'Entrata');
-        drawM('mChartExp', 'Uscita');
+        drawM('mChartInc', 'Entrata'); drawM('mChartExp', 'Uscita');
     }
 
-    // UTILS
     function setType(t) { currentType = t; document.getElementById('btn-inc').classList.toggle('inc-active', t === 'Entrata'); document.getElementById('btn-exp').classList.toggle('exp-active', t === 'Uscita'); updateCatDropdown(); }
     function updateCatDropdown() { const list = currentType === 'Entrata' ? catsInc : catsExp; document.getElementById('cat-select').innerHTML = list.map(c => `<option value="${c.n}">${c.n}</option>`).join(''); }
     function showPage(id, btn) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.add('active'); btn.classList.add('active'); render(); }
     async function addRecord() {
-        const amt = parseFloat(document.getElementById('amount').value);
-        if(!amt) return;
+        const amt = parseFloat(document.getElementById('amount').value); if(!amt) return;
         records.push({ id: Date.now(), type: currentType, date: document.getElementById('date').value, desc: document.getElementById('desc').value, category: document.getElementById('cat-select').value, amount: amt });
-        document.getElementById('amount').value=''; document.getElementById('desc').value='';
-        render(); await saveToCloud();
+        document.getElementById('amount').value=''; document.getElementById('desc').value=''; render(); await saveToCloud();
     }
     async function delRecord(id) { if(confirm("Elimina?")) { records = records.filter(r=>r.id!==id); render(); await saveToCloud(); } }
 
     window.onload = () => {
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
-        const mf = document.getElementById('month-filter');
-        const fm = document.getElementById('f-month');
-        months.forEach((m,i) => {
-            const opt = `<option value="${i}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`;
-            mf.innerHTML += opt;
-            fm.innerHTML += `<option value="${i}">${m}</option>`;
-        });
+        const mf = document.getElementById('month-filter'); const fm = document.getElementById('f-month');
+        months.forEach((m,i) => { const opt = `<option value="${i}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`; mf.innerHTML += opt; fm.innerHTML += `<option value="${i}">${m}</option>`; });
     };
 </script>
 </body>
