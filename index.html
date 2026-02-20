@@ -190,7 +190,6 @@
         XLSX.writeFile(workbook, `Wallet_${selYear}.xlsx`);
     }
 
-    // NUOVA FUNZIONE DI IMPORTAZIONE
     function importFromExcel(input) {
         const file = input.files[0];
         if (!file) return;
@@ -204,17 +203,25 @@
 
             let importedCount = 0;
             json.forEach(row => {
-                // Formato atteso: Data, Descrizione, Categoria, Tipo, Importo €
-                // Converte la data dal formato DD/MM/YYYY al formato YYYY-MM-DD
                 const dateParts = (row['Data'] || "").split('/');
                 if (dateParts.length === 3) {
                     const formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                    const type = row['Tipo'] || 'Uscita';
+                    const category = row['Categoria'] || 'Varie';
+
+                    // CREAZIONE AUTOMATICA CATEGORIA MANCANTE
+                    if (type === 'Entrata') {
+                        if (!catsInc.find(c => c.n === category)) catsInc.push({ n: category, b: 0 });
+                    } else {
+                        if (!catsExp.find(c => c.n === category)) catsExp.push({ n: category, b: 0 });
+                    }
+
                     records.push({
                         id: Date.now() + importedCount,
-                        type: row['Tipo'] || 'Uscita',
+                        type: type,
                         date: formattedDate,
                         desc: row['Descrizione'] || '',
-                        category: row['Categoria'] || '',
+                        category: category,
                         amount: parseFloat(row['Importo €']) || 0
                     });
                     importedCount++;
@@ -222,18 +229,17 @@
             });
 
             if (importedCount > 0) {
-                alert(`Importati con successo ${importedCount} movimenti.`);
+                alert(`Importati con successo ${importedCount} movimenti e aggiornate le categorie.`);
                 render();
                 saveToCloud();
             } else {
-                alert("Nessun dato valido trovato. Assicurati che le colonne siano: Data, Descrizione, Categoria, Tipo, Importo €");
+                alert("Nessun dato valido trovato.");
             }
-            input.value = ""; // Resetta input
+            input.value = "";
         };
         reader.readAsArrayBuffer(file);
     }
 
-    // Le altre funzioni (render, updateCharts, etc.) restano identiche all'ultima versione multi-anno
     function addCat(type) {
         const input = document.getElementById(type === 'inc' ? 'new-cat-inc' : 'new-cat-exp');
         if(input.value) { if(type==='inc') catsInc.push({n: input.value, b: 0}); else catsExp.push({n: input.value, b: 0}); input.value = ''; render(); saveToCloud(); }
