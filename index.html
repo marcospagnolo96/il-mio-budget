@@ -23,14 +23,11 @@
         .type-btn.exp-active { border-color: var(--danger); color: var(--danger); background: #fdf2f2; }
         input, select, .btn-save { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; margin-bottom: 8px; }
         .btn-save { background: var(--primary); color: white; font-weight: bold; cursor: pointer; border: none; }
-        
-        /* Correzione Linee Tabelle */
         .table-container { background: white; padding: 10px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         table th, table td { border: 1px solid #ddd !important; padding: 8px; text-align: center; }
         .table-annual { font-size: 0.75rem; table-layout: fixed; }
         .row-label { text-align: left !important; font-weight: bold; width: 110px; background: #fdfdfd; }
-        
         .val-inc { color: var(--success); font-weight: bold; }
         .val-exp { color: var(--danger); font-weight: bold; }
         .chart-box { height: 280px; background: white; border-radius: 10px; padding: 10px; margin-bottom: 15px; border: 1px solid #eee; }
@@ -123,6 +120,7 @@
     const months = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
     let records = [], catsInc = [{n: "Stipendio", b: 2000}], catsExp = [{n: "Cibo", b: 400}, {n: "Casa", b: 600}];
     let currentType = 'Entrata';
+    let cMain, cAvg, cMInc, cMExp;
 
     function gapiLoaded() { gapi.load('client', async () => { await gapi.client.init({ discoveryDocs: [DISCOVERY_DOC] }); gapiInited = true; }); }
     function gisLoaded() { tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback: '' }); gisInited = true; }
@@ -190,24 +188,28 @@
         const fT = document.getElementById('f-type').value;
         const filtered = records.filter(r => r.desc.toLowerCase().includes(fS) && (fM==="" || new Date(r.date).getMonth()==fM) && (fT==="" || r.type===fT));
         document.getElementById('history-body').innerHTML = filtered.slice().reverse().map(r => `<tr><td>${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}</td><td>${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td>€${r.amount}</td><td><button onclick="delRecord(${r.id})">🗑️</button></td></tr>`).join('');
+        
         updateCharts(mStats, selM);
     }
 
     function updateCharts(mStats, selM) {
-        if(window.cMain) window.cMain.destroy();
-        window.cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ label: 'Saldo', data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: { responsive: true, maintainAspectRatio: false } });
+        if(cMain) cMain.destroy();
+        cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ label: 'Saldo', data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: { responsive: true, maintainAspectRatio: false } });
 
         const avgData = catsExp.map(c => ({ n: c.n, v: records.filter(r => r.category === c.n).reduce((s,r)=>s+r.amount,0) / 12 }));
-        if(window.cAvg) window.cAvg.destroy();
-        window.cAvg = new Chart(document.getElementById('avgExpChart'), { type: 'bar', data: { labels: avgData.map(d=>d.n), datasets: [{ label: 'Media Mensile (€)', data: avgData.map(d=>d.v), backgroundColor: '#3498db' }] }, options: { responsive: true, maintainAspectRatio: false } });
+        if(cAvg) cAvg.destroy();
+        cAvg = new Chart(document.getElementById('avgExpChart'), { type: 'bar', data: { labels: avgData.map(d=>d.n), datasets: [{ label: 'Media Mensile (€)', data: avgData.map(d=>d.v), backgroundColor: '#3498db' }] }, options: { responsive: true, maintainAspectRatio: false } });
 
-        const drawM = (id, type) => {
-            const real = records.filter(r => r.type === type && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
-            const prev = (type === 'Entrata' ? catsInc : catsExp).reduce((s,c)=>s+c.b, 0);
-            if(window[id]) window[id].destroy();
-            window[id] = new Chart(document.getElementById(id), { type: 'bar', data: { labels: ['Previsto', 'Reale'], datasets: [{ data: [prev, real], backgroundColor: ['#3498db', type==='Entrata'?'#27ae60':'#e74c3c'] }] }, options: { responsive: true, maintainAspectRatio: false } });
-        };
-        drawM('mChartInc', 'Entrata'); drawM('mChartExp', 'Uscita');
+        // Grafici Mensili
+        const realInc = records.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
+        const prevInc = catsInc.reduce((s,c)=>s+c.b, 0);
+        if(cMInc) cMInc.destroy();
+        cMInc = new Chart(document.getElementById('mChartInc'), { type: 'bar', data: { labels: ['Previsto', 'Reale'], datasets: [{ data: [prevInc, realInc], backgroundColor: ['#3498db', '#27ae60'] }] }, options: { responsive: true, maintainAspectRatio: false } });
+
+        const realExp = records.filter(r => r.type === 'Uscita' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
+        const prevExp = catsExp.reduce((s,c)=>s+c.b, 0);
+        if(cMExp) cMExp.destroy();
+        cMExp = new Chart(document.getElementById('mChartExp'), { type: 'bar', data: { labels: ['Previsto', 'Reale'], datasets: [{ data: [prevExp, realExp], backgroundColor: ['#3498db', '#e74c3c'] }] }, options: { responsive: true, maintainAspectRatio: false } });
     }
 
     function setType(t) { currentType = t; document.getElementById('btn-inc').classList.toggle('inc-active', t === 'Entrata'); document.getElementById('btn-exp').classList.toggle('exp-active', t === 'Uscita'); updateCatDropdown(); }
