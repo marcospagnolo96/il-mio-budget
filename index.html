@@ -26,8 +26,8 @@
         .table-container { background: white; padding: 10px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         table th, table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        /* Storico senza linee */
-        .no-lines td, .no-lines th { border: none !important; }
+        /* Storico compatto e senza linee */
+        .no-lines td, .no-lines th { border: none !important; padding: 4px 8px !important; }
         .table-annual { font-size: 0.7rem; table-layout: fixed; }
         .row-label { text-align: left !important; font-weight: bold; width: 110px; background: #fdfdfd; position: sticky; left: 0; }
         .col-avg { background: #f0f7ff; font-weight: bold; color: var(--info); }
@@ -35,11 +35,10 @@
         .val-exp { color: var(--danger); font-weight: bold; }
         .chart-box { height: 280px; background: white; border-radius: 10px; padding: 10px; margin-bottom: 15px; border: 1px solid #eee; }
         .cat-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; background: #f9f9f9; padding: 8px; border-radius: 5px; border: 1px solid #eee; }
+        .cat-item span { font-weight: bold; flex: 1; }
         .cat-item input { width: 70px; margin-bottom: 0; }
-        .btn-del-cat { background: none; border: none; color: #999; cursor: pointer; font-weight: bold; padding: 0 5px; }
-        .btn-del-cat:hover { color: var(--danger); }
-        .btn-x { background: none; border: none; color: #ccc; cursor: pointer; font-size: 1.1rem; padding: 5px; }
-        .btn-x:hover { color: var(--danger); }
+        .btn-del-cat { background: none; border: none; color: var(--danger); cursor: pointer; font-weight: bold; padding: 0 5px; }
+        .btn-x { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; padding: 2px; }
         .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #sync-status { font-size: 0.7rem; color: #7f8c8d; text-align: center; margin-top: 10px; }
     </style>
@@ -189,7 +188,7 @@
         const buildRow = (lbl, data, cls) => {
             const tot = data.reduce((a,b)=>a+b,0);
             const avg = tot / 12;
-            return `<tr><td class="row-label">${lbl}</td>${data.map(v => `<td class="${cls}">${v.toFixed(0)}</td>`).join('')}<td style="font-weight:bold">${tot.toFixed(0)}</td><td class="col-avg">${avg.toFixed(0)}</td></tr>`;
+            return `<tr><td class="row-label">${lbl}</td>${data.map(v => `<td class="${cls}">${v.toFixed(0)}€</td>`).join('')}<td style="font-weight:bold">${tot.toFixed(0)}€</td><td class="col-avg">${avg.toFixed(0)}€</td></tr>`;
         };
         document.getElementById('b-sum').innerHTML = buildRow('Entrate', mStats.map(s=>s.inc), 'val-inc') + buildRow('Uscite', mStats.map(s=>s.exp), 'val-exp') + buildRow('Saldo', mStats.map(s=>s.inc-s.exp), '');
 
@@ -208,7 +207,7 @@
             list.forEach(c => {
                 const real = records.filter(r => r.type === type && r.category === c.n && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
                 const diff = type === 'Entrata' ? (real - c.b) : (c.b - real);
-                body.innerHTML += `<tr><td style="text-align:left">${c.n}</td><td>${c.b}</td><td>${real.toFixed(0)}</td><td style="color:${diff>=0?'green':'red'}">${diff.toFixed(0)}</td></tr>`;
+                body.innerHTML += `<tr><td style="text-align:left">${c.n}</td><td>${c.b}€</td><td>${real.toFixed(0)}€</td><td style="color:${diff>=0?'green':'red'}">${diff.toFixed(0)}€</td></tr>`;
             });
         };
         buildMTable(catsInc, 'Entrata', 'm-inc-body'); buildMTable(catsExp, 'Uscita', 'm-exp-body');
@@ -221,7 +220,7 @@
         document.getElementById('history-body').innerHTML = filtered.slice().reverse().map(r => `<tr><td style="text-align:left">${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">€${r.amount}</td><td style="text-align:right"><button class="btn-x" onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
         
         updateCharts(mStats, selM);
-        const rendCatEdit = (list, type, divId) => { document.getElementById(divId).innerHTML = list.map((c, i) => `<div class="cat-item"><span style="flex:1">${c.n}</span><input type="number" value="${c.b}" onchange="updateBudget('${type}', ${i}, this.value)"><button class="btn-del-cat" onclick="delCat('${type}', ${i})">✕</button></div>`).join(''); };
+        const rendCatEdit = (list, type, divId) => { document.getElementById(divId).innerHTML = list.map((c, i) => `<div class="cat-item"><span>${c.n}</span><label style="font-size:0.7rem">Budget:</label><input type="number" value="${c.b}" onchange="updateBudget('${type}', ${i}, this.value)"><button class="btn-del-cat" onclick="delCat('${type}', ${i})">✕</button></div>`).join(''); };
         rendCatEdit(catsInc, 'inc', 'edit-cats-inc'); rendCatEdit(catsExp, 'exp', 'edit-cats-exp');
     }
 
