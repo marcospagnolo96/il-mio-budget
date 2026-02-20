@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wallet Cloud Pro 2026</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
     <style>
@@ -26,8 +27,9 @@
         .table-container { background: white; padding: 10px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         table th, table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        /* Storico compatto e senza linee */
-        .no-lines td, .no-lines th { border: none !important; padding: 4px 8px !important; }
+        /* Tabelle senza linee e compatte */
+        .no-lines td, .no-lines th { border: none !important; padding: 2px 8px !important; }
+        .bold-cat { font-weight: bold; text-align: left !important; }
         .table-annual { font-size: 0.7rem; table-layout: fixed; }
         .row-label { text-align: left !important; font-weight: bold; width: 110px; background: #fdfdfd; position: sticky; left: 0; }
         .col-avg { background: #f0f7ff; font-weight: bold; color: var(--info); }
@@ -38,7 +40,7 @@
         .cat-item span { font-weight: bold; flex: 1; }
         .cat-item input { width: 70px; margin-bottom: 0; }
         .btn-del-cat { background: none; border: none; color: var(--danger); cursor: pointer; font-weight: bold; padding: 0 5px; }
-        .btn-x { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; padding: 2px; }
+        .btn-x { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; padding: 0px; line-height: 1; }
         .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #sync-status { font-size: 0.7rem; color: #7f8c8d; text-align: center; margin-top: 10px; }
     </style>
@@ -86,14 +88,14 @@
         <h3>Dettaglio: <select id="month-filter" onchange="render()" style="width:150px"></select></h3>
         <div style="display: flex; gap: 20px; flex-wrap: wrap;">
             <div style="flex:1; min-width: 300px;">
-                <h4 class="val-inc">Entrate (Azzurro = Previsto)</h4>
+                <h4 class="val-inc">Entrate: Previsto vs Reale</h4>
                 <div class="chart-box"><canvas id="mChartInc"></canvas></div>
-                <div class="table-container"><table><thead><tr><th>Cat</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-inc-body"></tbody></table></div>
+                <div class="table-container"><table class="no-lines"><thead><tr><th style="text-align:left">Cat</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-inc-body"></tbody></table></div>
             </div>
             <div style="flex:1; min-width: 300px;">
-                <h4 class="val-exp">Uscite (Azzurro = Previsto)</h4>
+                <h4 class="val-exp">Uscite: Previsto vs Reale</h4>
                 <div class="chart-box"><canvas id="mChartExp"></canvas></div>
-                <div class="table-container"><table><thead><tr><th>Cat</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-exp-body"></tbody></table></div>
+                <div class="table-container"><table class="no-lines"><thead><tr><th style="text-align:left">Cat</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-exp-body"></tbody></table></div>
             </div>
         </div>
     </div>
@@ -124,6 +126,7 @@
 </main>
 
 <script>
+    Chart.register(ChartDataLabels);
     const CLIENT_ID = '748854814089-olhm7pebtjdn7beu9j5jt7n8hfj8pih2.apps.googleusercontent.com';
     const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest";
     const SCOPES = "https://www.googleapis.com/auth/drive.file";
@@ -176,9 +179,7 @@
         fCat.value = currentFCat;
 
         const hHTML = '<th class="row-label">Cat</th>' + months.map(m => `<th>${m.substring(0,3)}</th>`).join('') + '<th>TOT</th><th class="col-avg">MED</th>';
-        document.getElementById('h-sum').innerHTML = hHTML;
-        document.getElementById('h-inc').innerHTML = hHTML;
-        document.getElementById('h-exp').innerHTML = hHTML;
+        document.getElementById('h-sum').innerHTML = hHTML; document.getElementById('h-inc').innerHTML = hHTML; document.getElementById('h-exp').innerHTML = hHTML;
 
         let mStats = months.map((_, i) => ({
             inc: records.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0),
@@ -207,7 +208,7 @@
             list.forEach(c => {
                 const real = records.filter(r => r.type === type && r.category === c.n && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
                 const diff = type === 'Entrata' ? (real - c.b) : (c.b - real);
-                body.innerHTML += `<tr><td style="text-align:left">${c.n}</td><td>${c.b}€</td><td>${real.toFixed(0)}€</td><td style="color:${diff>=0?'green':'red'}">${diff.toFixed(0)}€</td></tr>`;
+                body.innerHTML += `<tr><td class="bold-cat">${c.n}</td><td>${c.b}€</td><td>${real.toFixed(0)}€</td><td style="color:${diff>=0?'green':'red'}">${diff.toFixed(0)}€</td></tr>`;
             });
         };
         buildMTable(catsInc, 'Entrata', 'm-inc-body'); buildMTable(catsExp, 'Uscita', 'm-exp-body');
@@ -217,7 +218,7 @@
         const fT = document.getElementById('f-type').value;
         const fC = document.getElementById('f-cat').value;
         const filtered = records.filter(r => r.desc.toLowerCase().includes(fS) && (fM==="" || new Date(r.date).getMonth()==fM) && (fT==="" || r.type===fT) && (fC==="" || r.category===fC));
-        document.getElementById('history-body').innerHTML = filtered.slice().reverse().map(r => `<tr><td style="text-align:left">${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">€${r.amount}</td><td style="text-align:right"><button class="btn-x" onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
+        document.getElementById('history-body').innerHTML = filtered.slice().reverse().map(r => `<tr><td style="text-align:left">${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">${r.amount}€</td><td style="text-align:right"><button class="btn-x" onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
         
         updateCharts(mStats, selM);
         const rendCatEdit = (list, type, divId) => { document.getElementById(divId).innerHTML = list.map((c, i) => `<div class="cat-item"><span>${c.n}</span><label style="font-size:0.7rem">Budget:</label><input type="number" value="${c.b}" onchange="updateBudget('${type}', ${i}, this.value)"><button class="btn-del-cat" onclick="delCat('${type}', ${i})">✕</button></div>`).join(''); };
@@ -225,19 +226,32 @@
     }
 
     function updateCharts(mStats, selM) {
+        const chartOptions = { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                datalabels: { color: '#000', anchor: 'end', align: 'top', formatter: (v) => v.toFixed(0) + '€', font: { weight: 'bold', size: 10 } }
+            },
+            scales: { y: { display: false } }
+        };
+
         if(cMain) cMain.destroy();
-        cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ label: 'Saldo', data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: { responsive: true, maintainAspectRatio: false } });
+        cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: chartOptions });
+        
         const avgData = catsExp.map(c => ({ n: c.n, v: records.filter(r => r.category === c.n).reduce((s,r)=>s+r.amount,0) / 12 }));
         if(cAvg) cAvg.destroy();
-        cAvg = new Chart(document.getElementById('avgExpChart'), { type: 'bar', data: { labels: avgData.map(d=>d.n), datasets: [{ label: 'Media Mensile (€)', data: avgData.map(d=>d.v), backgroundColor: '#3498db' }] }, options: { responsive: true, maintainAspectRatio: false } });
+        cAvg = new Chart(document.getElementById('avgExpChart'), { type: 'bar', data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: '#3498db' }] }, options: chartOptions });
+        
         const realInc = records.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
         const prevInc = catsInc.reduce((s,c)=>s+c.b, 0);
         if(cMInc) cMInc.destroy();
-        cMInc = new Chart(document.getElementById('mChartInc'), { type: 'bar', data: { labels: ['Previsto', 'Reale'], datasets: [{ data: [prevInc, realInc], backgroundColor: ['#3498db', '#27ae60'] }] }, options: { responsive: true, maintainAspectRatio: false } });
+        cMInc = new Chart(document.getElementById('mChartInc'), { type: 'bar', data: { labels: ['Previsto', 'Reale'], datasets: [{ data: [prevInc, realInc], backgroundColor: ['#3498db', '#27ae60'] }] }, options: chartOptions });
+        
         const realExp = records.filter(r => r.type === 'Uscita' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
         const prevExp = catsExp.reduce((s,c)=>s+c.b, 0);
         if(cMExp) cMExp.destroy();
-        cMExp = new Chart(document.getElementById('mChartExp'), { type: 'bar', data: { labels: ['Previsto', 'Reale'], datasets: [{ data: [prevExp, realExp], backgroundColor: ['#3498db', '#e74c3c'] }] }, options: { responsive: true, maintainAspectRatio: false } });
+        cMExp = new Chart(document.getElementById('mChartExp'), { type: 'bar', data: { labels: ['Previsto', 'Reale'], datasets: [{ data: [prevExp, realExp], backgroundColor: ['#3498db', '#e74c3c'] }] }, options: chartOptions });
     }
 
     function setType(t) { currentType = t; document.getElementById('btn-inc').classList.toggle('inc-active', t === 'Entrata'); document.getElementById('btn-exp').classList.toggle('exp-active', t === 'Uscita'); updateCatDropdown(); }
