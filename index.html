@@ -124,7 +124,6 @@
                 <input type="number" id="savings-threshold" value="20" onchange="render(); saveToCloud();" style="margin-bottom:0; flex: 1;">
                 <span style="font-weight: bold; font-size: 0.9rem;">%</span>
             </div>
-            <p style="font-size: 0.65rem; color: #7f8c8d; margin: 5px 0 0 0; line-height: 1.2;">I mesi sotto questa soglia verranno evidenziati in rosso nel riepilogo.</p>
         </div>
     </div>
 
@@ -193,7 +192,6 @@
         </div>
         
         <h3>🔄 Movimenti Ricorrenti In Sospeso</h3>
-        <p style="font-size: 0.75rem; color: #7f8c8d;">I movimenti qui sotto verranno inseriti automaticamente nello storico una volta raggiunta la data prevista.</p>
         <div class="table-container" style="margin-bottom: 20px; border: 1px solid #3498db; background: #f0f7ff;">
             <table class="no-lines">
                 <thead><tr><th style="text-align:left">Data Prevista</th><th style="text-align:left">Descrizione</th><th style="text-align:center">Tipo</th><th style="text-align:right">Importo</th><th style="text-align:right">Azioni</th></tr></thead>
@@ -247,7 +245,6 @@
             document.getElementById('savings-threshold').value = savingsThreshold;
         } else { await saveToCloud(true); }
         document.getElementById('sync-status').innerText = "✅ Cloud Sincronizzato";
-        
         await checkRecurringMoves();
         render();
     }
@@ -256,39 +253,41 @@
         const nowStr = new Date().toISOString().split('T')[0];
         let changed = false;
 
-        records.forEach(r => {
+        for (let i = 0; i < records.length; i++) {
+            let r = records[i];
             if (r.recurring && r.date <= nowStr) {
                 r.recurring = false;
                 const oldDate = new Date(r.date);
-                const nextDate = new Date(oldDate.getFullYear(), oldDate.getMonth() + 1, oldDate.getDate());
+                const currentDay = oldDate.getDate();
+                let nextYear = oldDate.getFullYear();
+                let nextMonth = oldDate.getMonth() + 1;
                 
-                if (nextDate.getMonth() !== (oldDate.getMonth() + 1) % 12) {
-                    nextDate.setDate(0);
+                if (nextMonth > 11) {
+                    nextMonth = 0;
+                    nextYear++;
                 }
+
+                let nextDateObj = new Date(nextYear, nextMonth, 1);
+                const lastDayOfNextMonth = new Date(nextYear, nextMonth + 1, 0).getDate();
+                const targetDay = Math.min(currentDay, lastDayOfNextMonth);
+                nextDateObj.setDate(targetDay);
 
                 records.push({
                     id: Date.now() + Math.random(),
                     type: r.type,
-                    date: nextDate.toISOString().split('T')[0],
+                    date: nextDateObj.toISOString().split('T')[0],
                     desc: r.desc,
                     category: r.category,
                     amount: r.amount,
                     recurring: true
                 });
-                
                 changed = true;
             }
-        });
-
-        if (changed) {
-            await saveToCloud();
-            render();
         }
+        if (changed) { await saveToCloud(); render(); }
     }
 
-    function getActiveRecurringTemplates() {
-        return records.filter(r => r.recurring).sort((a,b) => a.date.localeCompare(b.date));
-    }
+    function getActiveRecurringTemplates() { return records.filter(r => r.recurring).sort((a,b) => a.date.localeCompare(b.date)); }
 
     async function toggleRecurringStatus(id) {
         if(confirm("Vuoi annullare questo movimento ricorrente in sospeso?")) {
@@ -316,16 +315,7 @@
     function exportToExcel() {
         const selYear = document.getElementById('year-selector').value;
         const today = new Date().toISOString().split('T')[0];
-        const data = records
-            .filter(r => new Date(r.date).getFullYear().toString() === selYear)
-            .sort((a,b) => new Date(b.date) - new Date(a.date) || b.id - a.id)
-            .map(r => ({
-                Data: r.date.split('-').reverse().join('/'),
-                Descrizione: r.desc,
-                Categoria: r.category,
-                Tipo: r.type,
-                'Importo €': r.amount
-            }));
+        const data = records.filter(r => new Date(r.date).getFullYear().toString() === selYear).map(r => ({ Data: r.date.split('-').reverse().join('/'), Descrizione: r.desc, Categoria: r.category, Tipo: r.type, 'Importo €': r.amount }));
         const worksheet = XLSX.utils.json_to_sheet(data);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, `Movimenti ${selYear}`);
@@ -373,8 +363,7 @@
         const input = document.getElementById(type === 'inc' ? 'new-cat-inc' : 'new-cat-exp');
         if(input.value) { 
             if(type==='inc') catsInc.push({n: input.value, b: 0}); else catsExp.push({n: input.value, b: 0}); 
-            catsInc.sort((a,b)=>a.n.localeCompare(b.n)); 
-            catsExp.sort((a,b)=>a.n.localeCompare(b.n));
+            catsInc.sort((a,b)=>a.n.localeCompare(b.n)); catsExp.sort((a,b)=>a.n.localeCompare(b.n));
             input.value = ''; render(); saveToCloud(); 
         }
     }
@@ -385,101 +374,46 @@
         const isDark = document.body.classList.contains('dark-theme');
         Chart.defaults.color = isDark ? '#e0e0e0' : '#2c3e50';
         Chart.defaults.borderColor = isDark ? '#444' : '#ddd';
-
         const selYear = document.getElementById('year-selector').value;
         const selM = parseInt(document.getElementById('month-filter').value);
         const now = new Date();
         const curYear = now.getFullYear().toString();
         const curMonth = now.getMonth();
         const threshold = parseFloat(document.getElementById('savings-threshold').value) || 20;
-        
         document.getElementById('date').max = now.toISOString().split('T')[0];
-
         let avgDivisor = 12;
-        if (selYear === curYear) { avgDivisor = curMonth + 1; } 
-        else if (parseInt(selYear) > parseInt(curYear)) { avgDivisor = 0; }
-
+        if (selYear === curYear) { avgDivisor = curMonth + 1; } else if (parseInt(selYear) > parseInt(curYear)) { avgDivisor = 0; }
         const yearRecords = records.filter(r => !r.recurring && new Date(r.date).getFullYear().toString() === selYear);
         updateCatDropdown();
-        
         const fCat = document.getElementById('f-cat');
         const currentSelectedCat = fCat.value;
         fCat.innerHTML = '<option value="">Tutte le categorie</option>' + [...catsInc, ...catsExp].map(c => `<option value="${c.n}">${c.n}</option>`).join('');
         fCat.value = currentSelectedCat;
-
         const hHTML = '<th class="row-label">Categoria</th>' + months.map(m => `<th>${m.substring(0,3)}</th>`).join('') + '<th>TOT</th><th class="col-avg">MED</th>';
         document.getElementById('h-sum').innerHTML = hHTML; document.getElementById('h-inc').innerHTML = hHTML; document.getElementById('h-exp').innerHTML = hHTML;
-        
-        let mStats = months.map((_, i) => ({
-            inc: yearRecords.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0),
-            exp: yearRecords.filter(r => r.type === 'Uscita' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0)
-        }));
-
-        const buildRow = (lbl, data, cls) => {
-            const tot = data.reduce((a,b)=>a+b,0);
-            const avg = avgDivisor > 0 ? tot / avgDivisor : 0;
-            return `<tr><td class="row-label">${lbl}</td>${data.map(v => `<td class="${cls}">${fEuro(v)}</td>`).join('')}<td style="font-weight:bold">${fEuro(tot)}</td><td class="col-avg">${fEuro(avg)}</td></tr>`;
-        };
-
+        let mStats = months.map((_, i) => ({ inc: yearRecords.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0), exp: yearRecords.filter(r => r.type === 'Uscita' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0) }));
+        const buildRow = (lbl, data, cls) => { const tot = data.reduce((a,b)=>a+b,0); const avg = avgDivisor > 0 ? tot / avgDivisor : 0; return `<tr><td class="row-label">${lbl}</td>${data.map(v => `<td class="${cls}">${fEuro(v)}</td>`).join('')}<td style="font-weight:bold">${fEuro(tot)}</td><td class="col-avg">${fEuro(avg)}</td></tr>`; };
         const savingsRateValues = mStats.map(s => s.inc > 0 ? ((s.inc - s.exp) / s.inc * 100) : 0);
-        const totInc = mStats.reduce((a,b)=>a+b.inc, 0);
-        const totExp = mStats.reduce((a,b)=>a+b.exp, 0);
-        const totSavingsRate = totInc > 0 ? ((totInc - totExp) / totInc * 100) : 0;
-
+        const totInc = mStats.reduce((a,b)=>a+b.inc, 0); const totExp = mStats.reduce((a,b)=>a+b.exp, 0); const totSavingsRate = totInc > 0 ? ((totInc - totExp) / totInc * 100) : 0;
         const rateCells = savingsRateValues.map(v => `<td class="${v < threshold ? 'low-savings' : ''}">${v.toFixed(1)}%</td>`).join('');
         const totRateCell = `<td style="font-weight:bold" class="${totSavingsRate < threshold ? 'low-savings' : ''}">${totSavingsRate.toFixed(1)}%</td>`;
-
         document.getElementById('b-sum').innerHTML = buildRow('Entrate', mStats.map(s=>s.inc), 'val-inc') + buildRow('Uscite', mStats.map(s=>s.exp), 'val-exp') + buildRow('Risparmi', mStats.map(s=>s.inc-s.exp), '') + `<tr><td class="row-label">Tasso Risparmio</td>${rateCells}${totRateCell}<td class="col-avg">${totSavingsRate.toFixed(1)}%</td></tr>`;
-        
-        const buildCatTable = (cats, type, bodyId) => {
-            let html = '';
-            cats.forEach(c => {
-                let rowData = months.map((_, i) => yearRecords.filter(r => r.type === type && r.category === c.n && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0));
-                html += buildRow(c.n, rowData, type === 'Entrata' ? 'val-inc' : 'val-exp');
-            });
-            document.getElementById(bodyId).innerHTML = html;
-        };
+        const buildCatTable = (cats, type, bodyId) => { let html = ''; cats.forEach(c => { let rowData = months.map((_, i) => yearRecords.filter(r => r.type === type && r.category === c.n && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0)); html += buildRow(c.n, rowData, type === 'Entrata' ? 'val-inc' : 'val-exp'); }); document.getElementById(bodyId).innerHTML = html; };
         buildCatTable(catsInc, 'Entrata', 'b-inc'); buildCatTable(catsExp, 'Uscita', 'b-exp');
-
-        const buildMTable = (list, type, bodyId) => {
-            const body = document.getElementById(bodyId); body.innerHTML = '';
-            list.forEach(c => {
-                const real = yearRecords.filter(r => r.type === type && r.category === c.n && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
-                const diff = type === 'Entrata' ? (real - c.b) : (c.b - real);
-                body.innerHTML += `<tr><td class="bold-cat">${c.n}</td><td>${fEuro(c.b)}</td><td>${fEuro(real)}</td><td style="color:${diff>=0?'green':'red'}">${fEuro(diff)}</td></tr>`;
-            });
-        };
+        const buildMTable = (list, type, bodyId) => { const body = document.getElementById(bodyId); body.innerHTML = ''; list.forEach(c => { const real = yearRecords.filter(r => r.type === type && r.category === c.n && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0); const diff = type === 'Entrata' ? (real - c.b) : (c.b - real); body.innerHTML += `<tr><td class="bold-cat">${c.n}</td><td>${fEuro(c.b)}</td><td>${fEuro(real)}</td><td style="color:${diff>=0?'green':'red'}">${fEuro(diff)}</td></tr>`; }); };
         buildMTable(catsInc, 'Entrata', 'm-inc-body'); buildMTable(catsExp, 'Uscita', 'm-exp-body');
-        
-        const fS = document.getElementById('f-search').value.toLowerCase(); 
-        const fM = document.getElementById('f-month').value; 
-        const fT = document.getElementById('f-type').value; 
-        const fC = document.getElementById('f-cat').value;
-
-        const filtered = yearRecords.filter(r => {
-                const matchesSearch = r.desc.toLowerCase().includes(fS);
-                const matchesMonth = fM === "" || new Date(r.date).getMonth() == fM;
-                const matchesType = fT === "" || r.type === fT;
-                const matchesCat = fC === "" || r.category === fC;
-                return matchesSearch && matchesMonth && matchesType && matchesCat;
-            }).sort((a,b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
-
+        const fS = document.getElementById('f-search').value.toLowerCase(); const fM = document.getElementById('f-month').value; const fT = document.getElementById('f-type').value; const fC = document.getElementById('f-cat').value;
+        const filtered = yearRecords.filter(r => { const matchesSearch = r.desc.toLowerCase().includes(fS); const matchesMonth = fM === "" || new Date(r.date).getMonth() == fM; const matchesType = fT === "" || r.type === fT; const matchesCat = fC === "" || r.category === fC; return matchesSearch && matchesMonth && matchesType && matchesCat; }).sort((a,b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
         document.getElementById('history-body').innerHTML = filtered.map(r => `<tr><td style="text-align:left">${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">${fEuro(r.amount)}</td><td style="text-align:right"><button class="btn-edit-rec" onclick="editRecord(${r.id})">✎</button><button class="btn-x" onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
-        
         const pendingTemplates = getActiveRecurringTemplates();
         document.getElementById('recurring-list-body').innerHTML = pendingTemplates.map(r => `<tr><td style="text-align:left">${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">${fEuro(r.amount)}</td><td style="text-align:right"><button class="btn-x" title="Annulla" onclick="toggleRecurringStatus(${r.id})">✕ Annulla</button></td></tr>`).join('');
-
         updateCharts(mStats, selM, yearRecords, avgDivisor);
-        
-        const rendCatEdit = (list, type, divId) => { 
-            const sortedList = [...list].sort((a,b) => a.n.localeCompare(b.n));
-            document.getElementById(divId).innerHTML = sortedList.map((c, i) => `<div class="cat-item"><span>${c.n}</span><label style="font-size:0.7rem">Budget:</label><input type="number" step="0.01" value="${c.b}" onchange="updateBudget('${type}', ${i}, this.value)"><button class="btn-del-cat" onclick="delCat('${type}', ${i})">✕</button></div>`).join(''); 
-        };
+        const rendCatEdit = (list, type, divId) => { const sortedList = [...list].sort((a,b) => a.n.localeCompare(b.n)); document.getElementById(divId).innerHTML = sortedList.map((c, i) => `<div class="cat-item"><span>${c.n}</span><label style="font-size:0.7rem">Budget:</label><input type="number" step="0.01" value="${c.b}" onchange="updateBudget('${type}', ${i}, this.value)"><button class="btn-del-cat" onclick="delCat('${type}', ${i})">✕</button></div>`).join(''); };
         rendCatEdit(catsInc, 'inc', 'edit-cats-inc'); rendCatEdit(catsExp, 'exp', 'edit-cats-exp');
     }
 
     function updateCharts(mStats, selM, yearRecords, avgDivisor) {
-        const standardOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: true } }, scales: { y: { beginAtZero: true, ticks: { callback: v => fEuro(v) } } } };
+        const standardOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => fEuro(v) } } } };
         if(cMain) cMain.destroy();
         cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: standardOptions });
         if(cForecast) cForecast.destroy();
@@ -490,13 +424,12 @@
         const totalReal = monthlySavings.slice(0, curMonthIdx + 1).reduce((a, b) => a + b, 0);
         const avgSavings = (curMonthIdx >= 0) ? totalReal / (curMonthIdx + 1) : 0;
         for (let i = 0; i < 12; i++) { if (i <= curMonthIdx) { cumulative += monthlySavings[i]; cumulativeReal.push(cumulative); cumulativeForecast.push(null); } else { if (i === curMonthIdx + 1 && i > 0) cumulativeForecast[i-1] = cumulative; cumulative += avgSavings; cumulativeForecast.push(cumulative); cumulativeReal.push(null); } }
-        cForecast = new Chart(document.getElementById('forecastChart'), { type: 'line', data: { labels: months.map(m => m.substring(0, 3)), datasets: [{ label: 'Reale', data: cumulativeReal, borderColor: '#3498db', backgroundColor: '#3498db', fill: false, tension: 0.1, pointRadius: 4 }, { label: 'Previsione', data: cumulativeForecast, borderColor: '#95a5a6', borderDash: [5, 5], fill: false, tension: 0.1, pointRadius: 2 } ]}, options: { ...standardOptions, plugins: { ...standardOptions.plugins, legend: { display: true, labels: { boxWidth: 10, font: { size: 10 } } } } } });
+        cForecast = new Chart(document.getElementById('forecastChart'), { type: 'line', data: { labels: months.map(m => m.substring(0, 3)), datasets: [{ label: 'Reale', data: cumulativeReal, borderColor: '#3498db', pointRadius: 4 }, { label: 'Previsione', data: cumulativeForecast, borderColor: '#95a5a6', borderDash: [5, 5], pointRadius: 2 } ]}, options: { ...standardOptions, plugins: { ...standardOptions.plugins, legend: { display: true } } } });
         const avgData = catsExp.map(c => ({ n: c.n, v: avgDivisor > 0 ? (yearRecords.filter(r => r.type === 'Uscita' && r.category === c.n).reduce((s,r)=>s+r.amount,0) / avgDivisor) : 0 }));
-        const totalAvgExp = avgData.reduce((s, d) => s + d.v, 0);
         if(cAvg) cAvg.destroy();
-        cAvg = new Chart(document.getElementById('avgExpChart'), { type: 'bar', data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: '#e74c3c' }] }, options: { ...standardOptions, scales: { ...standardOptions.scales, x: { ticks: { minRotation: 90, maxRotation: 90 } } } } });
+        cAvg = new Chart(document.getElementById('avgExpChart'), { type: 'bar', data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: '#e74c3c' }] }, options: standardOptions });
         if(cAvgPie) cAvgPie.destroy();
-        cAvgPie = new Chart(document.getElementById('avgExpPieChart'), { type: 'pie', data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: ['#e74c3c', '#3498db', '#27ae60', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }, tooltip: { enabled: true, callbacks: { label: (c) => c.label + ': ' + fEuro(c.parsed) + " (" + (totalAvgExp > 0 ? ((c.parsed / totalAvgExp) * 100).toFixed(1) : 0) + "%)" } } } } });
+        cAvgPie = new Chart(document.getElementById('avgExpPieChart'), { type: 'pie', data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: ['#e74c3c', '#3498db', '#27ae60', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c'] }] }, options: { responsive: true, maintainAspectRatio: false } });
         const realInc = yearRecords.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
         const prevInc = catsInc.reduce((s,c)=>s+c.b, 0);
         if(cMInc) cMInc.destroy();
@@ -510,18 +443,15 @@
     function setType(t) { currentType = t; document.getElementById('btn-inc').classList.toggle('inc-active', t === 'Entrata'); document.getElementById('btn-exp').classList.toggle('exp-active', t === 'Uscita'); updateCatDropdown(); }
     function updateCatDropdown() { const list = currentType === 'Entrata' ? [...catsInc] : [...catsExp]; list.sort((a,b)=>a.n.localeCompare(b.n)); document.getElementById('cat-select').innerHTML = list.map(c => `<option value="${c.n}">${c.n}</option>`).join(''); }
     function showPage(id, btn) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.add('active'); btn.classList.add('active'); render(); }
-    
     async function addRecord() {
         const inputDate = document.getElementById('date').value;
         const amt = parseFloat(document.getElementById('amount').value); if(!amt) return;
         const editId = document.getElementById('edit-id').value;
         if (editId) { records = records.filter(r => r.id != editId); document.getElementById('edit-id').value = ""; document.getElementById('form-title').innerText = "Nuovo Movimento"; }
         records.push({ id: Date.now(), type: currentType, date: inputDate, desc: document.getElementById('desc').value, category: document.getElementById('cat-select').value, amount: amt, recurring: document.getElementById('is-recurring').checked });
-        await checkRecurringMoves();
-        render(); await saveToCloud();
+        await checkRecurringMoves(); render(); await saveToCloud();
         document.getElementById('amount').value = ''; document.getElementById('desc').value = ''; document.getElementById('is-recurring').checked = false;
     }
-    
     async function delRecord(id) { if(confirm("Eliminare?")) { records = records.filter(r=>r.id!==id); render(); await saveToCloud(); } }
     function editRecord(id) { const r = records.find(rec => rec.id === id); if (!r) return; setType(r.type); document.getElementById('date').value = r.date; document.getElementById('desc').value = r.desc; document.getElementById('cat-select').value = r.category; document.getElementById('amount').value = r.amount; document.getElementById('is-recurring').checked = r.recurring || false; document.getElementById('edit-id').value = r.id; document.getElementById('form-title').innerText = "Modifica Movimento"; window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
@@ -531,9 +461,7 @@
         const mFilt = document.getElementById('month-filter');
         for(let y=2024; y<=2027; y++) { const opt=document.createElement('option'); opt.value=y; opt.text=y; if(y===2026) opt.selected=true; yearSel.appendChild(opt); }
         months.forEach((m,i) => { fMonth.innerHTML += `<option value="${i}">${m}</option>`; mFilt.innerHTML += `<option value="${i}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`; });
-        const todayStr = new Date().toISOString().split('T')[0];
-        document.getElementById('date').value = todayStr;
-        document.getElementById('date').max = "";
+        document.getElementById('date').value = new Date().toISOString().split('T')[0];
     };
 </script>
 </body>
