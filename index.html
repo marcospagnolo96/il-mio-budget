@@ -49,7 +49,10 @@
         .val-exp { color: var(--danger); font-weight: bold; }
         .low-savings { color: var(--danger); font-weight: bold; background: #fff5f5; }
         
-        .chart-box { height: 280px; background: white; border-radius: 10px; padding: 10px; margin-bottom: 15px; border: 1px solid #eee; }
+        /* FIX ZOOM: Cambiato height fisso in min-height e aggiunta gestione canvas */
+        .chart-box { min-height: 280px; height: 30vh; width: 100%; position: relative; background: white; border-radius: 10px; padding: 10px; margin-bottom: 15px; border: 1px solid #eee; }
+        .chart-box canvas { width: 100% !important; height: 100% !important; }
+
         .cat-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; background: #f9f9f9; padding: 8px; border-radius: 5px; border: 1px solid #eee; }
         .cat-item span { font-weight: bold; flex: 1; }
         .cat-item input { width: 70px; margin-bottom: 0; }
@@ -57,8 +60,8 @@
         .btn-x { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; padding: 0px; line-height: 1; }
         .btn-edit { background: none; border: none; color: var(--info); cursor: pointer; font-size: 1rem; padding: 0px 8px; line-height: 1; }
         .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .chart-row { display: flex; gap: 15px; margin-bottom: 15px; }
-        .chart-row .chart-box { flex: 1; }
+        .chart-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+        .chart-row .chart-box { flex: 1; min-width: 300px; }
     </style>
 </head>
 <body>
@@ -221,7 +224,7 @@
 
     function exportToExcel() {
         const selYear = document.getElementById('year-selector').value;
-        const today = new Date().toISOString().split('T')[0]; // Formato AAAA-MM-GG
+        const today = new Date().toISOString().split('T')[0];
         const data = records
             .filter(r => new Date(r.date).getFullYear().toString() === selYear)
             .sort((a,b) => new Date(b.date) - new Date(a.date) || b.id - a.id)
@@ -386,7 +389,9 @@
     }
 
     function updateCharts(mStats, selM, yearRecords, avgDivisor) {
+        // Opzioni grafici con responsive: true e maintainAspectRatio: false
         const standardOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => fEuro(v) } } } };
+        
         if(cMain) cMain.destroy();
         cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: standardOptions });
 
