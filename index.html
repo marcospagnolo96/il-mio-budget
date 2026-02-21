@@ -116,10 +116,16 @@
         <button id="btn-save-main" class="btn-save" onclick="addRecord()">SALVA</button>
     </div>
 
-    <div class="form-box" style="margin-top: 10px; border-top: 2px solid var(--info);">
-        <h4 style="color: var(--info); font-size: 0.8rem;">⚙️ Target Risparmio</h4>
-        <label style="font-size: 0.7rem;">Soglia Minima (%):</label>
-        <input type="number" id="savings-threshold" value="20" onchange="render(); saveToCloud();" style="margin-top:2px; font-size: 0.75rem;">
+    <div class="form-box" style="border-top: 3px solid var(--info);">
+        <h4>Target Risparmio</h4>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+            <label style="font-size: 0.7rem; color: #7f8c8d; margin-bottom: 2px;">Soglia Minima Desiderata:</label>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="number" id="savings-threshold" value="20" onchange="render(); saveToCloud();" style="margin-bottom:0; flex: 1;">
+                <span style="font-weight: bold; font-size: 0.9rem;">%</span>
+            </div>
+            <p style="font-size: 0.65rem; color: #7f8c8d; margin: 5px 0 0 0; line-height: 1.2;">I mesi sotto questa soglia verranno evidenziati in rosso nel riepilogo.</p>
+        </div>
     </div>
 
     <div class="excel-actions">
