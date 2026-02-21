@@ -246,7 +246,80 @@
             document.getElementById('savings-threshold').value = savingsThreshold;
         } else { await saveToCloud(true); }
         document.getElementById('sync-status').innerText = "✅ Cloud Sincronizzato";
+        
+        // Controllo ricorrenti dopo sincronizzazione
+        await checkRecurringMoves();
         render();
+    }
+
+    // LOGICA AUTO-RICORRENTE CON APPROVAZIONE
+    async function checkRecurringMoves() {
+        const now = new Date();
+        const curYear = now.getFullYear();
+        const curMonth = now.getMonth();
+        let addedAny = false;
+
+        // Troviamo i movimenti ricorrenti unici (basati su descrizione e categoria)
+        // per capire quali sono i "template" da seguire
+        const recurringTemplates = records.filter(r => r.recurring);
+        
+        // Per ogni template ricorrente, controlliamo se esiste già nel mese/anno corrente
+        // Usiamo un set per non chiedere più volte la stessa cosa se ci sono duplicati
+        const processedKeys = new Set();
+
+        for (const rec of recurringTemplates) {
+            const key = `${rec.desc}-${rec.category}-${rec.type}`.toLowerCase();
+            if (processedKeys.has(key)) continue;
+            processedKeys.add(key);
+
+            // Cerchiamo se esiste già un movimento con stessa descrizione e categoria in questo mese
+            const existsThisMonth = records.find(r => 
+                r.desc === rec.desc && 
+                r.category === rec.category && 
+                new Date(r.date).getMonth() === curMonth &&
+                new Date(r.date).getFullYear() === curYear
+            );
+
+            if (!existsThisMonth) {
+                // Chiediamo approvazione
+                const confirmAdd = confirm(`Moviemento Ricorrente rilevato:\n"${rec.desc}" (${fEuro(rec.amount)})\n\nNon risulta inserito per questo mese (${months[curMonth]}). Lo vuoi aggiungere ora?`);
+                
+                if (confirmAdd) {
+                    const newDate = new Date();
+                    // Proviamo a mantenere lo stesso giorno del record originale se possibile
+                    const originalDay = new Date(rec.date).getDate();
+                    newDate.setDate(originalDay);
+                    
+                    // Se il giorno non esiste o è nel futuro rispetto a oggi, mettiamo oggi
+                    if (newDate > now || newDate.getMonth() !== curMonth) {
+                        records.push({
+                            id: Date.now() + Math.random(),
+                            type: rec.type,
+                            date: now.toISOString().split('T')[0],
+                            desc: rec.desc,
+                            category: rec.category,
+                            amount: rec.amount,
+                            recurring: true
+                        });
+                    } else {
+                        records.push({
+                            id: Date.now() + Math.random(),
+                            type: rec.type,
+                            date: newDate.toISOString().split('T')[0],
+                            desc: rec.desc,
+                            category: rec.category,
+                            amount: rec.amount,
+                            recurring: true
+                        });
+                    }
+                    addedAny = true;
+                }
+            }
+        }
+
+        if (addedAny) {
+            await saveToCloud();
+        }
     }
 
     async function saveToCloud(isNew = false) {
@@ -434,11 +507,7 @@
     }
 
     function updateCharts(mStats, selM, yearRecords, avgDivisor) {
-        const standardOptions = { 
-            responsive: true, maintainAspectRatio: false, 
-            plugins: { legend: { display: false }, tooltip: { enabled: true } }, 
-            scales: { y: { beginAtZero: true, ticks: { callback: v => fEuro(v) } } } 
-        };
+        const standardOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: true } }, scales: { y: { beginAtZero: true, ticks: { callback: v => fEuro(v) } } } };
         
         if(cMain) cMain.destroy();
         cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: standardOptions });
@@ -470,47 +539,10 @@
         const totalAvgExp = avgData.reduce((s, d) => s + d.v, 0);
 
         if(cAvg) cAvg.destroy();
-        cAvg = new Chart(document.getElementById('avgExpChart'), { 
-            type: 'bar', 
-            data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: '#e74c3c' }] }, 
-            options: {
-                ...standardOptions,
-                scales: {
-                    ...standardOptions.scales,
-                    x: {
-                        ticks: {
-                            minRotation: 90, 
-                            maxRotation: 90
-                        }
-                    }
-                }
-            } 
-        });
+        cAvg = new Chart(document.getElementById('avgExpChart'), { type: 'bar', data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: '#e74c3c' }] }, options: { ...standardOptions, scales: { ...standardOptions.scales, x: { ticks: { minRotation: 90, maxRotation: 90 } } } } });
         
         if(cAvgPie) cAvgPie.destroy();
-        cAvgPie = new Chart(document.getElementById('avgExpPieChart'), { 
-            type: 'pie', 
-            data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: ['#e74c3c', '#3498db', '#27ae60', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c'] }] }, 
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                plugins: { 
-                    legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } },
-                    tooltip: { 
-                        enabled: true,
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.label || '';
-                                if (label) label += ': ';
-                                let value = context.parsed;
-                                let percentage = totalAvgExp > 0 ? ((value / totalAvgExp) * 100).toFixed(1) : 0;
-                                return label + fEuro(value) + " (" + percentage + "%)";
-                            }
-                        }
-                    } 
-                } 
-            } 
-        });
+        cAvgPie = new Chart(document.getElementById('avgExpPieChart'), { type: 'pie', data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: ['#e74c3c', '#3498db', '#27ae60', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }, tooltip: { enabled: true, callbacks: { label: (c) => c.label + ': ' + fEuro(c.parsed) + " (" + (totalAvgExp > 0 ? ((c.parsed / totalAvgExp) * 100).toFixed(1) : 0) + "%)" } } } } });
 
         const realInc = yearRecords.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
         const prevInc = catsInc.reduce((s,c)=>s+c.b, 0);
@@ -524,13 +556,7 @@
     }
 
     function setType(t) { currentType = t; document.getElementById('btn-inc').classList.toggle('inc-active', t === 'Entrata'); document.getElementById('btn-exp').classList.toggle('exp-active', t === 'Uscita'); updateCatDropdown(); }
-    
-    function updateCatDropdown() { 
-        const list = currentType === 'Entrata' ? [...catsInc] : [...catsExp]; 
-        list.sort((a,b)=>a.n.localeCompare(b.n));
-        document.getElementById('cat-select').innerHTML = list.map(c => `<option value="${c.n}">${c.n}</option>`).join(''); 
-    }
-    
+    function updateCatDropdown() { const list = currentType === 'Entrata' ? [...catsInc] : [...catsExp]; list.sort((a,b)=>a.n.localeCompare(b.n)); document.getElementById('cat-select').innerHTML = list.map(c => `<option value="${c.n}">${c.n}</option>`).join(''); }
     function showPage(id, btn) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.add('active'); btn.classList.add('active'); render(); }
     
     async function addRecord() {
@@ -547,30 +573,14 @@
     }
     
     async function delRecord(id) { if(confirm("Eliminare?")) { records = records.filter(r=>r.id!==id); render(); await saveToCloud(); } }
-
-    function editRecord(id) {
-        const r = records.find(rec => rec.id === id);
-        if (!r) return;
-        setType(r.type);
-        document.getElementById('date').value = r.date;
-        document.getElementById('desc').value = r.desc;
-        document.getElementById('cat-select').value = r.category;
-        document.getElementById('amount').value = r.amount;
-        document.getElementById('is-recurring').checked = r.recurring || false;
-        document.getElementById('edit-id').value = r.id;
-        document.getElementById('form-title').innerText = "Modifica Movimento";
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    function editRecord(id) { const r = records.find(rec => rec.id === id); if (!r) return; setType(r.type); document.getElementById('date').value = r.date; document.getElementById('desc').value = r.desc; document.getElementById('cat-select').value = r.category; document.getElementById('amount').value = r.amount; document.getElementById('is-recurring').checked = r.recurring || false; document.getElementById('edit-id').value = r.id; document.getElementById('form-title').innerText = "Modifica Movimento"; window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
     window.onload = () => {
         const yearSel = document.getElementById('year-selector');
         const fMonth = document.getElementById('f-month');
         const mFilt = document.getElementById('month-filter');
         for(let y=2024; y<=2027; y++) { const opt=document.createElement('option'); opt.value=y; opt.text=y; if(y===2026) opt.selected=true; yearSel.appendChild(opt); }
-        months.forEach((m,i) => { 
-            fMonth.innerHTML += `<option value="${i}">${m}</option>`; 
-            mFilt.innerHTML += `<option value="${i}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`;
-        });
+        months.forEach((m,i) => { fMonth.innerHTML += `<option value="${i}">${m}</option>`; mFilt.innerHTML += `<option value="${i}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`; });
         const todayStr = new Date().toISOString().split('T')[0];
         document.getElementById('date').value = todayStr;
         document.getElementById('date').max = todayStr;
