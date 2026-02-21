@@ -70,7 +70,8 @@
         .cat-item input { width: 70px; margin-bottom: 0; }
         .btn-del-cat { background: none; border: none; color: var(--danger); cursor: pointer; font-weight: bold; padding: 0 5px; }
         .btn-x { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; padding: 0px; line-height: 1; }
-        .btn-edit { background: none; border: none; color: var(--info); cursor: pointer; font-size: 1rem; padding: 0px 8px; line-height: 1; }
+        .btn-edit-rec { background: none; border: none; color: var(--info); cursor: pointer; font-size: 1rem; padding: 0px 8px; line-height: 1; }
+        
         .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .chart-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
         .chart-row .chart-box { flex: 1; min-width: 300px; }
@@ -111,6 +112,7 @@
             <input type="checkbox" id="is-recurring" style="width: auto; margin: 0;">
             <label for="is-recurring" style="font-size: 0.75rem;">Ricorrente</label>
         </div>
+        <input type="hidden" id="edit-id" value="">
         <button id="btn-save-main" class="btn-save" onclick="addRecord()">SALVA</button>
     </div>
 
@@ -400,7 +402,7 @@
                 return matchesSearch && matchesMonth && matchesType && matchesCat;
             }).sort((a,b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
 
-        document.getElementById('history-body').innerHTML = filtered.map(r => `<tr><td style="text-align:left">${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}${r.recurring ? ' 🔄' : ''}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">${fEuro(r.amount)}</td><td style="text-align:right"><button class="btn-x" onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
+        document.getElementById('history-body').innerHTML = filtered.map(r => `<tr><td style="text-align:left">${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}${r.recurring ? ' 🔄' : ''}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">${fEuro(r.amount)}</td><td style="text-align:right"><button class="btn-edit-rec" onclick="editRecord(${r.id})">✎</button><button class="btn-x" onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
         
         updateCharts(mStats, selM, yearRecords, avgDivisor);
         
@@ -498,12 +500,34 @@
     
     async function addRecord() {
         const amt = parseFloat(document.getElementById('amount').value); if(!amt) return;
+        const editId = document.getElementById('edit-id').value;
+        
+        if (editId) {
+            records = records.filter(r => r.id != editId);
+            document.getElementById('edit-id').value = "";
+            document.getElementById('form-title').innerText = "Nuovo Movimento";
+        }
+
         records.push({ id: Date.now(), type: currentType, date: document.getElementById('date').value, desc: document.getElementById('desc').value, category: document.getElementById('cat-select').value, amount: amt, recurring: document.getElementById('is-recurring').checked });
         render(); await saveToCloud();
         document.getElementById('amount').value = ''; document.getElementById('desc').value = '';
     }
     
     async function delRecord(id) { if(confirm("Eliminare?")) { records = records.filter(r=>r.id!==id); render(); await saveToCloud(); } }
+
+    function editRecord(id) {
+        const r = records.find(rec => rec.id === id);
+        if (!r) return;
+        setType(r.type);
+        document.getElementById('date').value = r.date;
+        document.getElementById('desc').value = r.desc;
+        document.getElementById('cat-select').value = r.category;
+        document.getElementById('amount').value = r.amount;
+        document.getElementById('is-recurring').checked = r.recurring || false;
+        document.getElementById('edit-id').value = r.id;
+        document.getElementById('form-title').innerText = "Modifica Movimento";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
     window.onload = () => {
         const yearSel = document.getElementById('year-selector');
