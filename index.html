@@ -192,8 +192,9 @@
             </div>
         </div>
         
-        <h3>🔄 Movimenti Ricorrenti</h3>
-        <div class="table-container" style="margin-bottom: 20px; border: 1px solid #f1c40f; background: #fffdf0;">
+        <h3>🔄 Movimenti Ricorrenti Attivi</h3>
+        <p style="font-size: 0.75rem; color: #7f8c8d;">Questa lista mostra i tuoi abbonamenti o entrate fisse. L'app ti chiederà ogni mese se inserirli.</p>
+        <div class="table-container" style="margin-bottom: 20px; border: 1px solid #3498db; background: #f0f7ff;">
             <table class="no-lines">
                 <thead><tr><th style="text-align:left">Descrizione</th><th style="text-align:left">Categoria</th><th style="text-align:center">Tipo</th><th style="text-align:right">Importo</th><th style="text-align:right">Azioni</th></tr></thead>
                 <tbody id="recurring-list-body"></tbody>
@@ -247,32 +248,22 @@
         } else { await saveToCloud(true); }
         document.getElementById('sync-status').innerText = "✅ Cloud Sincronizzato";
         
-        // Controllo ricorrenti dopo sincronizzazione
         await checkRecurringMoves();
         render();
     }
 
-    // LOGICA AUTO-RICORRENTE CON APPROVAZIONE
+    // LOGICA AUTO-RICORRENTE CON STESSO GIORNO
     async function checkRecurringMoves() {
         const now = new Date();
         const curYear = now.getFullYear();
         const curMonth = now.getMonth();
         let addedAny = false;
 
-        // Troviamo i movimenti ricorrenti unici (basati su descrizione e categoria)
-        // per capire quali sono i "template" da seguire
-        const recurringTemplates = records.filter(r => r.recurring);
-        
-        // Per ogni template ricorrente, controlliamo se esiste già nel mese/anno corrente
-        // Usiamo un set per non chiedere più volte la stessa cosa se ci sono duplicati
-        const processedKeys = new Set();
+        // Troviamo i "Template" attivi: l'ultimo record per ogni descrizione/cat segnato come ricorrente
+        const activeTemplates = getActiveRecurringTemplates();
 
-        for (const rec of recurringTemplates) {
-            const key = `${rec.desc}-${rec.category}-${rec.type}`.toLowerCase();
-            if (processedKeys.has(key)) continue;
-            processedKeys.add(key);
-
-            // Cerchiamo se esiste già un movimento con stessa descrizione e categoria in questo mese
+        for (const rec of activeTemplates) {
+            // Cerchiamo se esiste già un movimento simile in questo mese
             const existsThisMonth = records.find(r => 
                 r.desc === rec.desc && 
                 r.category === rec.category && 
@@ -281,43 +272,55 @@
             );
 
             if (!existsThisMonth) {
-                // Chiediamo approvazione
-                const confirmAdd = confirm(`Moviemento Ricorrente rilevato:\n"${rec.desc}" (${fEuro(rec.amount)})\n\nNon risulta inserito per questo mese (${months[curMonth]}). Lo vuoi aggiungere ora?`);
+                const confirmAdd = confirm(`Movimento Ricorrente Attivo:\n"${rec.desc}" (${fEuro(rec.amount)})\n\nManca per ${months[curMonth]} ${curYear}. Lo vuoi inserire?`);
                 
                 if (confirmAdd) {
-                    const newDate = new Date();
-                    // Proviamo a mantenere lo stesso giorno del record originale se possibile
-                    const originalDay = new Date(rec.date).getDate();
-                    newDate.setDate(originalDay);
+                    const originalDate = new Date(rec.date);
+                    const targetDate = new Date(curYear, curMonth, originalDate.getDate());
                     
-                    // Se il giorno non esiste o è nel futuro rispetto a oggi, mettiamo oggi
-                    if (newDate > now || newDate.getMonth() !== curMonth) {
-                        records.push({
-                            id: Date.now() + Math.random(),
-                            type: rec.type,
-                            date: now.toISOString().split('T')[0],
-                            desc: rec.desc,
-                            category: rec.category,
-                            amount: rec.amount,
-                            recurring: true
-                        });
-                    } else {
-                        records.push({
-                            id: Date.now() + Math.random(),
-                            type: rec.type,
-                            date: newDate.toISOString().split('T')[0],
-                            desc: rec.desc,
-                            category: rec.category,
-                            amount: rec.amount,
-                            recurring: true
-                        });
+                    // Gestione mesi più corti (se l'originale era il 31 e ora è Febbraio)
+                    if (targetDate.getMonth() !== curMonth) {
+                        targetDate.setDate(0); // Va all'ultimo giorno del mese precedente (corretto per l'overflow)
                     }
+
+                    records.push({
+                        id: Date.now() + Math.random(),
+                        type: rec.type,
+                        date: targetDate.toISOString().split('T')[0],
+                        desc: rec.desc,
+                        category: rec.category,
+                        amount: rec.amount,
+                        recurring: true
+                    });
                     addedAny = true;
                 }
             }
         }
+        if (addedAny) await saveToCloud();
+    }
 
-        if (addedAny) {
+    // RITORNA SOLO I RECORD UNICI CHE RAPPRESENTANO "L'ABBONAMENTO" ATTIVO
+    function getActiveRecurringTemplates() {
+        const map = new Map();
+        // Ordiniamo per data decrescente per prendere l'ultimo inserito come riferimento
+        const sorted = [...records].filter(r => r.recurring).sort((a,b) => new Date(b.date) - new Date(a.date));
+        
+        sorted.forEach(r => {
+            const key = `${r.desc}-${r.category}-${r.type}`.toLowerCase();
+            if (!map.has(key)) map.set(key, r);
+        });
+        return Array.from(map.values());
+    }
+
+    // FUNZIONE PER DISATTIVARE LA RICORRENZA PER IL FUTURO
+    async function toggleRecurringStatus(desc, cat, type) {
+        if(confirm("Vuoi disattivare la ricorrenza automatica per questo elemento? Non verrà più chiesto nei prossimi mesi.")) {
+            records.forEach(r => {
+                if(r.desc === desc && r.category === cat && r.type === type) {
+                    r.recurring = false;
+                }
+            });
+            render();
             await saveToCloud();
         }
     }
@@ -453,11 +456,7 @@
         const rateCells = savingsRateValues.map(v => `<td class="${v < threshold ? 'low-savings' : ''}">${v.toFixed(1)}%</td>`).join('');
         const totRateCell = `<td style="font-weight:bold" class="${totSavingsRate < threshold ? 'low-savings' : ''}">${totSavingsRate.toFixed(1)}%</td>`;
 
-        document.getElementById('b-sum').innerHTML = 
-            buildRow('Entrate', mStats.map(s=>s.inc), 'val-inc') + 
-            buildRow('Uscite', mStats.map(s=>s.exp), 'val-exp') + 
-            buildRow('Risparmi', mStats.map(s=>s.inc-s.exp), '') +
-            `<tr><td class="row-label">Tasso Risparmio</td>${rateCells}${totRateCell}<td class="col-avg">${totSavingsRate.toFixed(1)}%</td></tr>`;
+        document.getElementById('b-sum').innerHTML = buildRow('Entrate', mStats.map(s=>s.inc), 'val-inc') + buildRow('Uscite', mStats.map(s=>s.exp), 'val-exp') + buildRow('Risparmi', mStats.map(s=>s.inc-s.exp), '') + `<tr><td class="row-label">Tasso Risparmio</td>${rateCells}${totRateCell}<td class="col-avg">${totSavingsRate.toFixed(1)}%</td></tr>`;
         
         const buildCatTable = (cats, type, bodyId) => {
             let html = '';
@@ -494,8 +493,9 @@
 
         document.getElementById('history-body').innerHTML = filtered.map(r => `<tr><td style="text-align:left">${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}${r.recurring ? ' 🔄' : ''}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">${fEuro(r.amount)}</td><td style="text-align:right"><button class="btn-edit-rec" onclick="editRecord(${r.id})">✎</button><button class="btn-x" onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
         
-        const recurringList = records.filter(r => r.recurring).sort((a,b) => b.id - a.id);
-        document.getElementById('recurring-list-body').innerHTML = recurringList.map(r => `<tr><td style="text-align:left">${r.desc}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">${fEuro(r.amount)}</td><td style="text-align:right"><button class="btn-edit-rec" onclick="editRecord(${r.id})">✎</button><button class="btn-x" onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
+        // MOSTRA SOLO I TEMPLATE RICORRENTI ATTIVI
+        const activeTemplates = getActiveRecurringTemplates();
+        document.getElementById('recurring-list-body').innerHTML = activeTemplates.map(r => `<tr><td style="text-align:left">${r.desc}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">${fEuro(r.amount)}</td><td style="text-align:right"><button class="btn-x" title="Disattiva ricorrenza" onclick="toggleRecurringStatus('${r.desc}', '${r.category}', '${r.type}')">Disattiva</button></td></tr>`).join('');
 
         updateCharts(mStats, selM, yearRecords, avgDivisor);
         
@@ -508,47 +508,27 @@
 
     function updateCharts(mStats, selM, yearRecords, avgDivisor) {
         const standardOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: true } }, scales: { y: { beginAtZero: true, ticks: { callback: v => fEuro(v) } } } };
-        
         if(cMain) cMain.destroy();
         cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: standardOptions });
-
         if(cForecast) cForecast.destroy();
         const monthlySavings = mStats.map(s => s.inc - s.exp);
-        let cumulative = 0;
-        const cumulativeReal = []; const cumulativeForecast = [];
+        let cumulative = 0; const cumulativeReal = []; const cumulativeForecast = [];
         const selYear = document.getElementById('year-selector').value;
-        const now = new Date();
-        const curMonthIdx = (selYear === now.getFullYear().toString()) ? now.getMonth() : (parseInt(selYear) < now.getFullYear() ? 12 : -1);
+        const now = new Date(); const curMonthIdx = (selYear === now.getFullYear().toString()) ? now.getMonth() : (parseInt(selYear) < now.getFullYear() ? 12 : -1);
         const totalReal = monthlySavings.slice(0, curMonthIdx + 1).reduce((a, b) => a + b, 0);
         const avgSavings = (curMonthIdx >= 0) ? totalReal / (curMonthIdx + 1) : 0;
-
-        for (let i = 0; i < 12; i++) {
-            if (i <= curMonthIdx) { cumulative += monthlySavings[i]; cumulativeReal.push(cumulative); cumulativeForecast.push(null); } 
-            else { if (i === curMonthIdx + 1 && i > 0) cumulativeForecast[i-1] = cumulative; cumulative += avgSavings; cumulativeForecast.push(cumulative); cumulativeReal.push(null); }
-        }
-        cForecast = new Chart(document.getElementById('forecastChart'), {
-            type: 'line',
-            data: { labels: months.map(m => m.substring(0, 3)), datasets: [
-                { label: 'Reale', data: cumulativeReal, borderColor: '#3498db', backgroundColor: '#3498db', fill: false, tension: 0.1, pointRadius: 4 },
-                { label: 'Previsione', data: cumulativeForecast, borderColor: '#95a5a6', borderDash: [5, 5], fill: false, tension: 0.1, pointRadius: 2 }
-            ]},
-            options: { ...standardOptions, plugins: { ...standardOptions.plugins, legend: { display: true, labels: { boxWidth: 10, font: { size: 10 } } } } }
-        });
-
+        for (let i = 0; i < 12; i++) { if (i <= curMonthIdx) { cumulative += monthlySavings[i]; cumulativeReal.push(cumulative); cumulativeForecast.push(null); } else { if (i === curMonthIdx + 1 && i > 0) cumulativeForecast[i-1] = cumulative; cumulative += avgSavings; cumulativeForecast.push(cumulative); cumulativeReal.push(null); } }
+        cForecast = new Chart(document.getElementById('forecastChart'), { type: 'line', data: { labels: months.map(m => m.substring(0, 3)), datasets: [{ label: 'Reale', data: cumulativeReal, borderColor: '#3498db', backgroundColor: '#3498db', fill: false, tension: 0.1, pointRadius: 4 }, { label: 'Previsione', data: cumulativeForecast, borderColor: '#95a5a6', borderDash: [5, 5], fill: false, tension: 0.1, pointRadius: 2 } ]}, options: { ...standardOptions, plugins: { ...standardOptions.plugins, legend: { display: true, labels: { boxWidth: 10, font: { size: 10 } } } } } });
         const avgData = catsExp.map(c => ({ n: c.n, v: avgDivisor > 0 ? (yearRecords.filter(r => r.type === 'Uscita' && r.category === c.n).reduce((s,r)=>s+r.amount,0) / avgDivisor) : 0 }));
         const totalAvgExp = avgData.reduce((s, d) => s + d.v, 0);
-
         if(cAvg) cAvg.destroy();
         cAvg = new Chart(document.getElementById('avgExpChart'), { type: 'bar', data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: '#e74c3c' }] }, options: { ...standardOptions, scales: { ...standardOptions.scales, x: { ticks: { minRotation: 90, maxRotation: 90 } } } } });
-        
         if(cAvgPie) cAvgPie.destroy();
         cAvgPie = new Chart(document.getElementById('avgExpPieChart'), { type: 'pie', data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: ['#e74c3c', '#3498db', '#27ae60', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }, tooltip: { enabled: true, callbacks: { label: (c) => c.label + ': ' + fEuro(c.parsed) + " (" + (totalAvgExp > 0 ? ((c.parsed / totalAvgExp) * 100).toFixed(1) : 0) + "%)" } } } } });
-
         const realInc = yearRecords.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
         const prevInc = catsInc.reduce((s,c)=>s+c.b, 0);
         if(cMInc) cMInc.destroy();
         cMInc = new Chart(document.getElementById('mChartInc'), { type: 'bar', data: { labels: ['Previsto', 'Reale'], datasets: [{ data: [prevInc, realInc], backgroundColor: ['#3498db', '#27ae60'] }] }, options: standardOptions });
-        
         const realExp = yearRecords.filter(r => r.type === 'Uscita' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
         const prevExp = catsExp.reduce((s,c)=>s+c.b, 0);
         if(cMExp) cMExp.destroy();
@@ -568,8 +548,7 @@
         if (editId) { records = records.filter(r => r.id != editId); document.getElementById('edit-id').value = ""; document.getElementById('form-title').innerText = "Nuovo Movimento"; }
         records.push({ id: Date.now(), type: currentType, date: inputDate, desc: document.getElementById('desc').value, category: document.getElementById('cat-select').value, amount: amt, recurring: document.getElementById('is-recurring').checked });
         render(); await saveToCloud();
-        document.getElementById('amount').value = ''; document.getElementById('desc').value = '';
-        document.getElementById('is-recurring').checked = false;
+        document.getElementById('amount').value = ''; document.getElementById('desc').value = ''; document.getElementById('is-recurring').checked = false;
     }
     
     async function delRecord(id) { if(confirm("Eliminare?")) { records = records.filter(r=>r.id!==id); render(); await saveToCloud(); } }
