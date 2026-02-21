@@ -9,9 +9,9 @@
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
     <style>
-        :root { --primary: #2c3e50; --success: #27ae60; --danger: #e74c3c; --info: #3498db; --bg: #f8f9fa; --card-bg: white; --text-main: #2c3e50; --border-color: #ddd; }
+        :root { --primary: #2c3e50; --success: #27ae60; --danger: #e74c3c; --info: #3498db; --bg: #f8f9fa; --card-bg: white; --text-main: #2c3e50; --border-color: #ddd; --rec-bg: #f0f7ff; --rec-border: #3498db; }
         
-        body.dark-theme { --primary: #3498db; --bg: #1a1a1a; --card-bg: #2d2d2d; --text-main: #e0e0e0; --border-color: #444; }
+        body.dark-theme { --primary: #3498db; --bg: #1a1a1a; --card-bg: #2d2d2d; --text-main: #e0e0e0; --border-color: #444; --rec-bg: #1e2a3a; --rec-border: #3498db; }
         body.dark-theme .sidebar { background: #252525; border-right-color: #444; }
         body.dark-theme .nav-btn { background: #333; color: #eee; }
         body.dark-theme .table-container, body.dark-theme .form-box, body.dark-theme .chart-box { background: var(--card-bg); border-color: #444; }
@@ -192,7 +192,7 @@
         </div>
         
         <h3>🔄 Movimenti Ricorrenti In Sospeso</h3>
-        <div class="table-container" style="margin-bottom: 20px; border: 1px solid #3498db; background: #f0f7ff;">
+        <div class="table-container" style="margin-bottom: 20px; border: 1px solid var(--rec-border); background: var(--rec-bg);">
             <table class="no-lines">
                 <thead><tr><th style="text-align:left">Data Prevista</th><th style="text-align:left">Descrizione</th><th style="text-align:center">Tipo</th><th style="text-align:right">Importo</th><th style="text-align:right">Azioni</th></tr></thead>
                 <tbody id="recurring-list-body"></tbody>
@@ -258,13 +258,11 @@
             if (r.recurring && r.date <= nowStr) {
                 r.recurring = false;
                 
-                // --- CORREZIONE DATA ---
                 const d = new Date(r.date);
                 const originalDay = d.getDate();
                 d.setMonth(d.getMonth() + 1, 1);
                 const lastDayOfNextMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
                 d.setDate(Math.min(originalDay, lastDayOfNextMonth));
-                // -----------------------
 
                 records.push({
                     id: Date.now() + Math.random(),
