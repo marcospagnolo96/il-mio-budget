@@ -23,13 +23,13 @@
 
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        .sidebar { width: 260px; background: white; padding: 10px 15px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; flex-shrink: 0; font-size: 0.85rem; }
+        .sidebar { width: 260px; background: white; padding: 10px 15px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; flex-shrink: 0; font-size: 0.85rem; overflow-y: auto; }
         .sidebar h2 { margin: 5px 0; font-size: 1.1rem; }
         .nav-btn { padding: 8px 12px; margin-bottom: 3px; border: none; background: #eee; text-align: left; cursor: pointer; font-weight: bold; border-radius: 6px; font-size: 0.8rem; }
         .nav-btn.active { background: #2c3e50; color: white; }
         body.dark-theme .nav-btn.active { background: var(--primary); }
         
-        .excel-actions { display: flex; gap: 5px; margin-top: auto; padding-top: 10px; padding-bottom: 5px; }
+        .excel-actions { display: flex; gap: 5px; margin-top: 20px; padding-bottom: 5px; }
         .btn-excel { flex: 1; padding: 8px; background: #1d6f42; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-align: center; font-size: 0.7rem; }
         .btn-import { background: #3498db; }
         
@@ -114,6 +114,12 @@
         <button id="btn-save-main" class="btn-save" onclick="addRecord()">SALVA</button>
     </div>
 
+    <div class="form-box" style="margin-top: 10px; border-top: 2px solid var(--info);">
+        <h4 style="color: var(--info); font-size: 0.8rem;">⚙️ Target Risparmio</h4>
+        <label style="font-size: 0.7rem;">Soglia Minima (%):</label>
+        <input type="number" id="savings-threshold" value="20" onchange="render(); saveToCloud();" style="margin-top:2px; font-size: 0.75rem;">
+    </div>
+
     <div class="excel-actions">
         <button class="btn-excel" onclick="exportToExcel()">📊 ESPORTA</button>
         <button class="btn-excel btn-import" onclick="document.getElementById('import-input').click()">📥 CARICA</button>
@@ -175,11 +181,6 @@
                 <h4 class="val-exp">Budget Uscite</h4>
                 <div style="display:flex; gap:5px; margin-bottom:10px;"><input type="text" id="new-cat-exp" placeholder="Nuova..."><button onclick="addCat('exp')">+</button></div>
                 <div id="edit-cats-exp"></div>
-            </div>
-            <div style="flex:1; min-width: 250px; background:var(--card-bg); padding:15px; border-radius:10px; border:1px solid var(--border-color);">
-                <h4>⚙️ Target Risparmio</h4>
-                <label style="font-size: 0.8rem;">Soglia Minima Tasso Risparmio (%):</label>
-                <input type="number" id="savings-threshold" value="20" onchange="render(); saveToCloud();" style="margin-top:5px;">
             </div>
         </div>
         <h3>📝 Storico Movimenti</h3>
@@ -444,6 +445,8 @@
         });
 
         const avgData = catsExp.map(c => ({ n: c.n, v: avgDivisor > 0 ? (yearRecords.filter(r => r.type === 'Uscita' && r.category === c.n).reduce((s,r)=>s+r.amount,0) / avgDivisor) : 0 }));
+        const totalAvgExp = avgData.reduce((s, d) => s + d.v, 0);
+
         if(cAvg) cAvg.destroy();
         cAvg = new Chart(document.getElementById('avgExpChart'), { type: 'bar', data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: '#e74c3c' }] }, options: standardOptions });
         
@@ -462,8 +465,9 @@
                             label: function(context) {
                                 let label = context.label || '';
                                 if (label) label += ': ';
-                                if (context.parsed !== null) label += fEuro(context.parsed);
-                                return label;
+                                let value = context.parsed;
+                                let percentage = totalAvgExp > 0 ? ((value / totalAvgExp) * 100).toFixed(1) : 0;
+                                return label + fEuro(value) + " (" + percentage + "%)";
                             }
                         }
                     } 
