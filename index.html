@@ -312,7 +312,7 @@
             buildRow('Entrate', mStats.map(s=>s.inc), 'val-inc') + 
             buildRow('Uscite', mStats.map(s=>s.exp), 'val-exp') + 
             buildRow('Risparmi', mStats.map(s=>s.inc-s.exp), '') +
-            `<tr><td class="row-label">Tasso Risparmio</td>${savingsRateData.map(v => `<td>${v}</td>`).join('')}<td style="font-weight:bold">${totSavingsRate}</td><td class="col-avg">-</td></tr>`;
+            `<tr><td class="row-label">Tasso Risparmio</td>${savingsRateData.map(v => `<td>${v}</td>`).join('')}<td style="font-weight:bold">${totSavingsRate}</td><td class="col-avg">${totSavingsRate}</td></tr>`;
         
         const buildCatTable = (cats, type, bodyId) => {
             let html = '';
