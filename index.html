@@ -10,6 +10,7 @@
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
     <style>
         :root { --primary: #2c3e50; --success: #27ae60; --danger: #e74c3c; --info: #3498db; --bg: #f8f9fa; --card-bg: white; --text-main: #2c3e50; --border-color: #ddd; }
+        
         body.dark-theme { --primary: #3498db; --bg: #1a1a1a; --card-bg: #2d2d2d; --text-main: #e0e0e0; --border-color: #444; }
         body.dark-theme .sidebar { background: #252525; border-right-color: #444; }
         body.dark-theme .nav-btn { background: #333; color: #eee; }
@@ -21,26 +22,33 @@
         body.dark-theme #year-selector { color: white !important; background-color: #252525 !important; }
 
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
         .sidebar { width: 260px; background: white; padding: 10px 15px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; flex-shrink: 0; font-size: 0.85rem; overflow-y: auto; }
         .sidebar h2 { margin: 5px 0; font-size: 1.1rem; }
         .nav-btn { padding: 8px 12px; margin-bottom: 3px; border: none; background: #eee; text-align: left; cursor: pointer; font-weight: bold; border-radius: 6px; font-size: 0.8rem; }
         .nav-btn.active { background: #2c3e50; color: white; }
         body.dark-theme .nav-btn.active { background: var(--primary); }
+        
         .excel-actions { display: flex; gap: 5px; margin-top: 20px; padding-bottom: 5px; }
         .btn-excel { flex: 1; padding: 8px; background: #1d6f42; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-align: center; font-size: 0.7rem; }
         .btn-import { background: #3498db; }
+        
         .main-content { flex: 1; padding: 20px; overflow-y: auto; }
         .page { display: none; }
         .page.active { display: block; }
+        
         .form-box { background: #fdfdfd; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 8px; }
         .form-box h4 { margin: 0 0 8px 0; font-size: 0.9rem; }
         .type-selector { display: flex; gap: 5px; margin-bottom: 8px; }
         .type-btn { flex: 1; padding: 6px; border: 2px solid #ddd; background: white; cursor: pointer; font-weight: bold; border-radius: 6px; font-size: 0.7rem; }
         .type-btn.inc-active { border-color: var(--success); color: var(--success); background: #eafaf1; }
         .type-btn.exp-active { border-color: var(--danger); color: var(--danger); background: #fdf2f2; }
+        
         input, select, .btn-save { width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; margin-bottom: 6px; font-size: 0.8rem; }
         .btn-save { background: var(--primary); color: white; font-weight: bold; cursor: pointer; border: none; margin-top: 2px; }
+        
         #sync-status { font-size: 0.65rem; color: #7f8c8d; text-align: center; margin-bottom: 5px; }
+        
         .table-container { background: white; padding: 10px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         table th, table td { border: 1px solid var(--border-color); padding: 8px; text-align: center; }
@@ -52,8 +60,10 @@
         .val-inc { color: var(--success); font-weight: bold; }
         .val-exp { color: var(--danger); font-weight: bold; }
         .low-savings { color: var(--danger); font-weight: bold; background: #fff5f5; }
+        
         .chart-box { height: 300px; width: 100%; position: relative; background: white; border-radius: 10px; padding: 10px 10px 35px 10px; margin-bottom: 15px; border: 1px solid #eee; box-sizing: border-box; }
         .chart-box canvas { width: 100% !important; height: 100% !important; }
+
         .cat-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; background: #f9f9f9; padding: 8px; border-radius: 5px; border: 1px solid #eee; }
         body.dark-theme .cat-item { background: #333; border-color: #444; }
         .cat-item span { font-weight: bold; flex: 1; }
@@ -61,6 +71,7 @@
         .btn-del-cat { background: none; border: none; color: var(--danger); cursor: pointer; font-weight: bold; padding: 0 5px; }
         .btn-x { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; padding: 0px; line-height: 1; }
         .btn-edit-rec { background: none; border: none; color: var(--info); cursor: pointer; font-size: 1rem; padding: 0px 8px; line-height: 1; }
+        
         .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .chart-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
         .chart-row .chart-box { flex: 1; min-width: 300px; }
@@ -80,10 +91,13 @@
         <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌓</button>
     </div>
     <select id="year-selector" onchange="render()" style="width: auto; font-size: 1rem; border: none; background: transparent; font-weight: bold; cursor: pointer;"></select>
+    
     <button class="nav-btn active" onclick="showPage('dashboard', this)">Riepilogo Annuale</button>
     <button class="nav-btn" onclick="showPage('monthly', this)">Vista Mensile</button>
     <button class="nav-btn" onclick="showPage('history', this)">Lista & Categorie</button>
+    
     <div id="sync-status">Connessione...</div>
+
     <div class="form-box">
         <h4 id="form-title">Nuovo Movimento</h4>
         <div class="type-selector">
@@ -101,6 +115,7 @@
         <input type="hidden" id="edit-id" value="">
         <button id="btn-save-main" class="btn-save" onclick="addRecord()">SALVA</button>
     </div>
+
     <div class="form-box">
         <h4>Target Risparmio</h4>
         <div style="display: flex; flex-direction: column; gap: 2px;">
@@ -109,8 +124,10 @@
                 <input type="number" id="savings-threshold" value="20" onchange="render(); saveToCloud();" style="margin-bottom:0; flex: 1;">
                 <span style="font-weight: bold; font-size: 0.9rem;">%</span>
             </div>
+            <p style="font-size: 0.65rem; color: #7f8c8d; margin: 5px 0 0 0; line-height: 1.2;">I mesi sotto questa soglia verranno evidenziati in rosso nel riepilogo.</p>
         </div>
     </div>
+
     <div class="excel-actions">
         <button class="btn-excel" onclick="exportToExcel()">📊 ESPORTA</button>
         <button class="btn-excel btn-import" onclick="document.getElementById('import-input').click()">📥 CARICA</button>
@@ -122,8 +139,14 @@
     <div id="dashboard" class="page active">
         <h3>📊 Analisi Risparmi & Previsioni</h3>
         <div class="chart-row">
-            <div class="chart-box"><h4 style="font-size: 0.8rem; margin: 0 0 5px 0;">Risparmi Mensili</h4><canvas id="mainChart"></canvas></div>
-            <div class="chart-box"><h4 style="font-size: 0.8rem; margin: 0 0 5px 0;">Proiezione Fine Anno (Cumulativo)</h4><canvas id="forecastChart"></canvas></div>
+            <div class="chart-box">
+                <h4 style="font-size: 0.8rem; margin: 0 0 5px 0;">Risparmi Mensili</h4>
+                <canvas id="mainChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h4 style="font-size: 0.8rem; margin: 0 0 5px 0;">Proiezione Fine Anno (Cumulativo)</h4>
+                <canvas id="forecastChart"></canvas>
+            </div>
         </div>
         <h3>📊 Riepilogo</h3>
         <div class="table-container"><table class="table-annual"><thead><tr id="h-sum"></tr></thead><tbody id="b-sum"></tbody></table></div>
@@ -131,7 +154,7 @@
         <div class="table-container"><table class="table-annual"><thead><tr id="h-inc"></tr></thead><tbody id="b-inc"></tbody></table></div>
         <h3>📉 Uscite per Categoria</h3>
         <div class="table-container"><table class="table-annual"><thead><tr id="h-exp"></tr></thead><tbody id="b-exp"></tbody></table></div>
-        <h3>📉 Spesa Media per Categoria</h3>
+        <h3>📉 Spesa Media per Categoria (Uscite Mensili)</h3>
         <div class="chart-row">
             <div class="chart-box"><canvas id="avgExpChart"></canvas></div>
             <div class="chart-box"><canvas id="avgExpPieChart"></canvas></div>
@@ -144,12 +167,12 @@
             <div style="flex:1; min-width: 300px;">
                 <h4 class="val-inc">Entrate: Previsto vs Reale</h4>
                 <div class="chart-box"><canvas id="mChartInc"></canvas></div>
-                <div class="table-container"><table class="no-lines"><thead><tr><th style="text-align:left">Cat</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-inc-body"></tbody></table></div>
+                <div class="table-container"><table class="no-lines"><thead><tr><th style="text-align:left">Categoria</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-inc-body"></tbody></table></div>
             </div>
             <div style="flex:1; min-width: 300px;">
                 <h4 class="val-exp">Uscite: Previsto vs Reale</h4>
                 <div class="chart-box"><canvas id="mChartExp"></canvas></div>
-                <div class="table-container"><table class="no-lines"><thead><tr><th style="text-align:left">Cat</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-exp-body"></tbody></table></div>
+                <div class="table-container"><table class="no-lines"><thead><tr><th style="text-align:left">Categoria</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-exp-body"></tbody></table></div>
             </div>
         </div>
     </div>
@@ -157,15 +180,23 @@
     <div id="history" class="page">
         <h3>⚙️ Impostazioni, Categorie & Obiettivi</h3>
         <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
-            <div style="flex:1; min-width: 250px; background:var(--card-bg); padding:15px; border-radius:10px; border:1px solid var(--border-color);"><h4 class="val-inc">Budget Entrate</h4><div style="display:flex; gap:5px; margin-bottom:10px;"><input type="text" id="new-cat-inc" placeholder="Nuova..."><button onclick="addCat('inc')">+</button></div><div id="edit-cats-inc"></div></div>
-            <div style="flex:1; min-width: 250px; background:var(--card-bg); padding:15px; border-radius:10px; border:1px solid var(--border-color);"><h4 class="val-exp">Budget Uscite</h4><div style="display:flex; gap:5px; margin-bottom:10px;"><input type="text" id="new-cat-exp" placeholder="Nuova..."><button onclick="addCat('exp')">+</button></div><div id="edit-cats-exp"></div></div>
+            <div style="flex:1; min-width: 250px; background:var(--card-bg); padding:15px; border-radius:10px; border:1px solid var(--border-color);">
+                <h4 class="val-inc">Budget Entrate</h4>
+                <div style="display:flex; gap:5px; margin-bottom:10px;"><input type="text" id="new-cat-inc" placeholder="Nuova..."><button onclick="addCat('inc')">+</button></div>
+                <div id="edit-cats-inc"></div>
+            </div>
+            <div style="flex:1; min-width: 250px; background:var(--card-bg); padding:15px; border-radius:10px; border:1px solid var(--border-color);">
+                <h4 class="val-exp">Budget Uscite</h4>
+                <div style="display:flex; gap:5px; margin-bottom:10px;"><input type="text" id="new-cat-exp" placeholder="Nuova..."><button onclick="addCat('exp')">+</button></div>
+                <div id="edit-cats-exp"></div>
+            </div>
         </div>
         
         <h3>🔄 Movimenti Ricorrenti Attivi</h3>
-        <p style="font-size: 0.75rem; color: #7f8c8d;">L'app chiede conferma solo se la data prevista è oggi o è già passata.</p>
+        <p style="font-size: 0.75rem; color: #7f8c8d;">Questa lista mostra i tuoi abbonamenti o entrate fisse. L'app ti chiederà ogni mese se inserirli.</p>
         <div class="table-container" style="margin-bottom: 20px; border: 1px solid #3498db; background: #f0f7ff;">
             <table class="no-lines">
-                <thead><tr><th style="text-align:left">Descrizione</th><th style="text-align:left">Cat</th><th style="text-align:center">Giorno</th><th style="text-align:right">Importo</th><th style="text-align:right">Azioni</th></tr></thead>
+                <thead><tr><th style="text-align:left">Descrizione</th><th style="text-align:left">Categoria</th><th style="text-align:center">Tipo</th><th style="text-align:right">Importo</th><th style="text-align:right">Azioni</th></tr></thead>
                 <tbody id="recurring-list-body"></tbody>
             </table>
         </div>
@@ -174,302 +205,364 @@
         <div class="form-box" style="display:flex; gap:10px; margin-bottom:15px; align-items: center; flex-wrap: wrap;">
             <input type="text" id="f-search" placeholder="Cerca..." oninput="render()" style="flex:1; margin-bottom:0">
             <select id="f-month" onchange="render()" style="width:120px; margin-bottom:0"><option value="">Mese...</option></select>
-            <select id="f-type" onchange="render()" style="width:100px; margin-bottom:0"><option value="">Tutti</option><option value="Entrata">Entrate</option><option value="Uscita">Uscite</option></select>
+            <select id="f-type" onchange="render()" style="width:100px; margin-bottom:0"><option value="">Tutti i tipi</option><option value="Entrata">Entrate</option><option value="Uscita">Uscite</option></select>
+            <select id="f-cat" onchange="render()" style="width:150px; margin-bottom:0"><option value="">Tutte le categorie</option></select>
         </div>
-        <div class="table-container"><table class="no-lines"><thead><tr><th style="text-align:left">Data</th><th style="text-align:left">Descrizione</th><th style="text-align:left">Cat</th><th style="text-align:center">Tipo</th><th style="text-align:right">Importo</th><th style="text-align:right">Azioni</th></tr></thead><tbody id="history-body"></tbody></table></div>
+        <div class="table-container"><table class="no-lines"><thead><tr><th style="text-align:left">Data</th><th style="text-align:left">Descrizione</th><th style="text-align:left">Categoria</th><th style="text-align:center">Tipo</th><th style="text-align:right">Importo</th><th style="text-align:right">Azioni</th></tr></thead><tbody id="history-body"></tbody></table></div>
     </div>
 </main>
 
 <script>
-    // --- COSTANTI E VARIABILI GLOBALI ---
     const CLIENT_ID = '748854814089-olhm7pebtjdn7beu9j5jt7n8hfj8pih2.apps.googleusercontent.com';
     const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest";
     const SCOPES = "https://www.googleapis.com/auth/drive.file";
-    let tokenClient, fileId = null, records = [], recurringTemplates = [], catsInc = [{n: "Stipendio", b: 2000}], catsExp = [{n: "Cibo", b: 400}], savingsThreshold = 20;
+    let tokenClient, gapiInited = false, gisInited = false, fileId = null;
     const months = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
-    let currentType = 'Entrata', cMain, cForecast, cAvg, cAvgPie, cMInc, cMExp;
+    let records = [], catsInc = [{n: "Stipendio", b: 2000}], catsExp = [{n: "Cibo", b: 400}, {n: "Casa", b: 600}], savingsThreshold = 20;
+    let currentType = 'Entrata';
+    let cMain, cForecast, cAvg, cAvgPie, cMInc, cMExp;
 
-    // --- UTILS ---
-    function fEuro(v) { return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(v); }
-    function toggleDarkMode() { document.body.classList.toggle('dark-theme'); localStorage.setItem('walletDarkMode', document.body.classList.contains('dark-theme')); render(); }
+    function fEuro(v) { return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(v); }
+    
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-theme');
+        localStorage.setItem('walletDarkMode', document.body.classList.contains('dark-theme'));
+        render();
+    }
     if(localStorage.getItem('walletDarkMode') === 'true') document.body.classList.add('dark-theme');
 
-    // --- GOOGLE API & SYNC ---
-    function gapiLoaded() { gapi.load('client', async () => { await gapi.client.init({ discoveryDocs: [DISCOVERY_DOC] }); }); }
-    function gisLoaded() { tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback: '' }); }
+    function gapiLoaded() { gapi.load('client', async () => { await gapi.client.init({ discoveryDocs: [DISCOVERY_DOC] }); gapiInited = true; }); }
+    function gisLoaded() { tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback: '' }); gisInited = true; }
     async function handleAuthClick() { tokenClient.callback = async (resp) => { document.getElementById('auth-screen').style.display = 'none'; await syncData(); }; tokenClient.requestAccessToken({prompt: 'consent'}); }
-
+    
     async function syncData() {
         const response = await gapi.client.drive.files.list({ q: "name = 'wallet_2026_data.json' and trashed = false" });
         if (response.result.files.length > 0) {
             fileId = response.result.files[0].id;
             const res = await gapi.client.drive.files.get({ fileId: fileId, alt: 'media' });
             records = res.result.records || []; 
-            recurringTemplates = res.result.recurringTemplates || [];
-            catsInc = res.result.catsInc || catsInc; catsExp = res.result.catsExp || catsExp;
+            catsInc = (res.result.catsInc || catsInc).sort((a,b) => a.n.localeCompare(b.n)); 
+            catsExp = (res.result.catsExp || catsExp).sort((a,b) => a.n.localeCompare(b.n));
             savingsThreshold = res.result.savingsThreshold || 20;
             document.getElementById('savings-threshold').value = savingsThreshold;
         } else { await saveToCloud(true); }
         document.getElementById('sync-status').innerText = "✅ Cloud Sincronizzato";
-        await checkRecurringMoves(); render();
+        
+        await checkRecurringMoves();
+        render();
+    }
+
+    // LOGICA AUTO-RICORRENTE CON STESSO GIORNO
+    async function checkRecurringMoves() {
+        const now = new Date();
+        const curYear = now.getFullYear();
+        const curMonth = now.getMonth();
+        let addedAny = false;
+
+        // Troviamo i "Template" attivi: l'ultimo record per ogni descrizione/cat segnato come ricorrente
+        const activeTemplates = getActiveRecurringTemplates();
+
+        for (const rec of activeTemplates) {
+            // Cerchiamo se esiste già un movimento simile in questo mese
+            const existsThisMonth = records.find(r => 
+                r.desc === rec.desc && 
+                r.category === rec.category && 
+                new Date(r.date).getMonth() === curMonth &&
+                new Date(r.date).getFullYear() === curYear
+            );
+
+            if (!existsThisMonth) {
+                const confirmAdd = confirm(`Movimento Ricorrente Attivo:\n"${rec.desc}" (${fEuro(rec.amount)})\n\nManca per ${months[curMonth]} ${curYear}. Lo vuoi inserire?`);
+                
+                if (confirmAdd) {
+                    const originalDate = new Date(rec.date);
+                    const targetDate = new Date(curYear, curMonth, originalDate.getDate());
+                    
+                    // Gestione mesi più corti (se l'originale era il 31 e ora è Febbraio)
+                    if (targetDate.getMonth() !== curMonth) {
+                        targetDate.setDate(0); // Va all'ultimo giorno del mese precedente (corretto per l'overflow)
+                    }
+
+                    records.push({
+                        id: Date.now() + Math.random(),
+                        type: rec.type,
+                        date: targetDate.toISOString().split('T')[0],
+                        desc: rec.desc,
+                        category: rec.category,
+                        amount: rec.amount,
+                        recurring: true
+                    });
+                    addedAny = true;
+                }
+            }
+        }
+        if (addedAny) await saveToCloud();
+    }
+
+    // RITORNA SOLO I RECORD UNICI CHE RAPPRESENTANO "L'ABBONAMENTO" ATTIVO
+    function getActiveRecurringTemplates() {
+        const map = new Map();
+        // Ordiniamo per data decrescente per prendere l'ultimo inserito come riferimento
+        const sorted = [...records].filter(r => r.recurring).sort((a,b) => new Date(b.date) - new Date(a.date));
+        
+        sorted.forEach(r => {
+            const key = `${r.desc}-${r.category}-${r.type}`.toLowerCase();
+            if (!map.has(key)) map.set(key, r);
+        });
+        return Array.from(map.values());
+    }
+
+    // FUNZIONE PER DISATTIVARE LA RICORRENZA PER IL FUTURO
+    async function toggleRecurringStatus(desc, cat, type) {
+        if(confirm("Vuoi disattivare la ricorrenza automatica per questo elemento? Non verrà più chiesto nei prossimi mesi.")) {
+            records.forEach(r => {
+                if(r.desc === desc && r.category === cat && r.type === type) {
+                    r.recurring = false;
+                }
+            });
+            render();
+            await saveToCloud();
+        }
     }
 
     async function saveToCloud(isNew = false) {
-        const content = JSON.stringify({records, recurringTemplates, catsInc, catsExp, savingsThreshold});
-        const accessToken = gapi.client.getToken().access_token;
+        catsInc.sort((a,b) => a.n.localeCompare(b.n));
+        catsExp.sort((a,b) => a.n.localeCompare(b.n));
+        savingsThreshold = parseFloat(document.getElementById('savings-threshold').value) || 20;
+        const content = JSON.stringify({records, catsInc, catsExp, savingsThreshold});
         if (isNew) {
-            const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=media', { 
-                method: 'POST', 
-                headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' }, 
-                body: content 
-            });
+            const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=media', { method: 'POST', headers: { 'Authorization': 'Bearer ' + gapi.client.getToken().access_token, 'Content-Type': 'application/json' }, body: content });
             const json = await res.json(); fileId = json.id;
             await gapi.client.drive.files.update({ fileId: fileId, resource: { name: 'wallet_2026_data.json' } });
         } else {
-            await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, { 
-                method: 'PATCH', 
-                headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' }, 
-                body: content 
-            });
+            await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + gapi.client.getToken().access_token, 'Content-Type': 'application/json' }, body: content });
         }
         document.getElementById('sync-status').innerText = "✅ Salvato";
     }
 
-    // --- LOGICA MOVIMENTI RICORRENTI ---
-    async function checkRecurringMoves() {
-        const now = new Date();
-        const curY = now.getFullYear();
-        const curM = now.getMonth();
-        const curD = now.getDate();
-        let added = false;
+    function exportToExcel() {
+        const selYear = document.getElementById('year-selector').value;
+        const today = new Date().toISOString().split('T')[0];
+        const data = records
+            .filter(r => new Date(r.date).getFullYear().toString() === selYear)
+            .sort((a,b) => new Date(b.date) - new Date(a.date) || b.id - a.id)
+            .map(r => ({
+                Data: r.date.split('-').reverse().join('/'),
+                Descrizione: r.desc,
+                Categoria: r.category,
+                Tipo: r.type,
+                'Importo €': r.amount
+            }));
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, `Movimenti ${selYear}`);
+        XLSX.writeFile(workbook, `Wallet_${today}.xlsx`);
+    }
 
-        recurringTemplates.forEach(rec => {
-            const planD = new Date(rec.date).getDate();
-            // RICHIESTA SOLO SE DATA ARRIVATA O PASSATA
-            if (curD >= planD) {
-                const exists = records.find(r => 
-                    r.desc === rec.desc && 
-                    r.category === rec.category && 
-                    new Date(r.date).getMonth() === curM && 
-                    new Date(r.date).getFullYear() === curY
-                );
-                if (!exists) {
-                    if (confirm(`Inserire movimento ricorrente: ${rec.desc} (${fEuro(rec.amount)})?`)) {
-                        let targetDate = new Date(curY, curM, planD);
-                        if (targetDate.getMonth() !== curM) targetDate.setDate(0);
-                        records.push({ 
-                            id: Date.now() + Math.random(), 
-                            type: rec.type, 
-                            date: targetDate.toISOString().split('T')[0], 
-                            desc: rec.desc, 
-                            category: rec.category, 
-                            amount: rec.amount, 
-                            isFromRec: true 
-                        });
-                        added = true;
-                    }
+    function importFromExcel(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+            const sheetName = workbook.SheetNames[0];
+            const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+            let importedCount = 0;
+            json.forEach(row => {
+                let formattedDate = "";
+                let rawDate = row['Data'];
+                if (!rawDate) return;
+                if (rawDate instanceof Date) { formattedDate = rawDate.toISOString().split('T')[0]; } 
+                else if (typeof rawDate === 'string' && rawDate.includes('/')) {
+                    const parts = rawDate.split('/');
+                    if (parts.length === 3) formattedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                } else if (!isNaN(rawDate)) {
+                    const d = new Date((rawDate - 25569) * 86400 * 1000);
+                    formattedDate = d.toISOString().split('T')[0];
                 }
-            }
-        });
-        if (added) await saveToCloud();
-    }
-
-    // --- GESTIONE DATI (CRUD) ---
-    async function addRecord() {
-        const amt = parseFloat(document.getElementById('amount').value); if(!amt) return;
-        const isRec = document.getElementById('is-recurring').checked;
-        const editId = document.getElementById('edit-id').value;
-        const data = { 
-            id: editId ? parseFloat(editId) : Date.now(), 
-            type: currentType, 
-            date: document.getElementById('date').value, 
-            desc: document.getElementById('desc').value, 
-            category: document.getElementById('cat-select').value, 
-            amount: amt 
+                if (formattedDate) {
+                    const type = row['Tipo'] || 'Uscita';
+                    const category = row['Categoria'] || 'Varie';
+                    if (type === 'Entrata') { if (!catsInc.find(c => c.n === category)) catsInc.push({ n: category, b: 0 }); } 
+                    else { if (!catsExp.find(c => c.n === category)) catsExp.push({ n: category, b: 0 }); }
+                    records.push({ id: Date.now() + importedCount, type: type, date: formattedDate, desc: row['Descrizione'] || '', category: category, amount: parseFloat(row['Importo €']) || 0 });
+                    importedCount++;
+                }
+            });
+            if (importedCount > 0) { catsInc.sort((a,b)=>a.n.localeCompare(b.n)); catsExp.sort((a,b)=>a.n.localeCompare(b.n)); render(); saveToCloud(); }
+            input.value = "";
         };
-        
-        if (editId) records = records.filter(r => r.id != editId);
-        records.push(data);
-        
-        if (isRec) {
-            // Aggiorna o aggiunge template ricorrente (indipendente dallo storico)
-            recurringTemplates = recurringTemplates.filter(t => !(t.desc === data.desc && t.category === data.category));
-            recurringTemplates.push({...data, id: Date.now() + 1});
+        reader.readAsArrayBuffer(file);
+    }
+
+    function addCat(type) {
+        const input = document.getElementById(type === 'inc' ? 'new-cat-inc' : 'new-cat-exp');
+        if(input.value) { 
+            if(type==='inc') catsInc.push({n: input.value, b: 0}); else catsExp.push({n: input.value, b: 0}); 
+            catsInc.sort((a,b)=>a.n.localeCompare(b.n)); 
+            catsExp.sort((a,b)=>a.n.localeCompare(b.n));
+            input.value = ''; render(); saveToCloud(); 
         }
-        
-        resetForm(); render(); await saveToCloud();
     }
+    function updateBudget(type, idx, val) { if(type==='inc') catsInc[idx].b = parseFloat(val) || 0; else catsExp[idx].b = parseFloat(val) || 0; saveToCloud(); }
+    async function delCat(type, idx) { if(confirm("Eliminare questa categoria?")) { if(type==='inc') catsInc.splice(idx, 1); else catsExp.splice(idx, 1); render(); await saveToCloud(); } }
 
-    function editRecord(id) {
-        const r = records.find(rec => rec.id === id); if(!r) return;
-        setType(r.type); document.getElementById('date').value = r.date; document.getElementById('desc').value = r.desc;
-        document.getElementById('amount').value = r.amount; document.getElementById('cat-select').value = r.category;
-        document.getElementById('edit-id').value = r.id; document.getElementById('form-title').innerText = "Modifica Movimento";
-    }
-
-    async function delRecord(id) { if(confirm("Eliminare dallo storico?")) { records = records.filter(r=>r.id!==id); render(); await saveToCloud(); } }
-
-    function editRecTemp(idx) {
-        const r = recurringTemplates[idx];
-        setType(r.type); document.getElementById('date').value = r.date; document.getElementById('desc').value = r.desc;
-        document.getElementById('amount').value = r.amount; document.getElementById('cat-select').value = r.category;
-        document.getElementById('is-recurring').checked = true; document.getElementById('form-title').innerText = "Modifica Ricorrente";
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    async function delRecTemp(idx) { if(confirm("Eliminare abbonamento ricorrente?")) { recurringTemplates.splice(idx,1); render(); await saveToCloud(); } }
-
-    // --- RENDERING & CHARTS ---
     function render() {
         const isDark = document.body.classList.contains('dark-theme');
         Chart.defaults.color = isDark ? '#e0e0e0' : '#2c3e50';
+        Chart.defaults.borderColor = isDark ? '#444' : '#ddd';
+
         const selYear = document.getElementById('year-selector').value;
         const selM = parseInt(document.getElementById('month-filter').value);
-        const yearRecords = records.filter(r => new Date(r.date).getFullYear().toString() === selYear);
+        const now = new Date();
+        const curYear = now.getFullYear().toString();
+        const curMonth = now.getMonth();
+        const threshold = parseFloat(document.getElementById('savings-threshold').value) || 20;
         
-        updateCatDropdown();
-        renderRecurringTable();
-        renderHistoryTable(yearRecords);
-        updateDashboard(yearRecords, selYear, selM);
-        renderSettings();
-    }
+        document.getElementById('date').max = now.toISOString().split('T')[0];
 
-    function updateDashboard(yearRecords, selYear, selM) {
+        let avgDivisor = 12;
+        if (selYear === curYear) { avgDivisor = curMonth + 1; } 
+        else if (parseInt(selYear) > parseInt(curYear)) { avgDivisor = 0; }
+
+        const yearRecords = records.filter(r => new Date(r.date).getFullYear().toString() === selYear);
+        updateCatDropdown();
+        
+        const fCat = document.getElementById('f-cat');
+        const currentSelectedCat = fCat.value;
+        fCat.innerHTML = '<option value="">Tutte le categorie</option>' + [...catsInc, ...catsExp].map(c => `<option value="${c.n}">${c.n}</option>`).join('');
+        fCat.value = currentSelectedCat;
+
+        const hHTML = '<th class="row-label">Categoria</th>' + months.map(m => `<th>${m.substring(0,3)}</th>`).join('') + '<th>TOT</th><th class="col-avg">MED</th>';
+        document.getElementById('h-sum').innerHTML = hHTML; document.getElementById('h-inc').innerHTML = hHTML; document.getElementById('h-exp').innerHTML = hHTML;
+        
         let mStats = months.map((_, i) => ({
             inc: yearRecords.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0),
             exp: yearRecords.filter(r => r.type === 'Uscita' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0)
         }));
+
+        const buildRow = (lbl, data, cls) => {
+            const tot = data.reduce((a,b)=>a+b,0);
+            const avg = avgDivisor > 0 ? tot / avgDivisor : 0;
+            return `<tr><td class="row-label">${lbl}</td>${data.map(v => `<td class="${cls}">${fEuro(v)}</td>`).join('')}<td style="font-weight:bold">${fEuro(tot)}</td><td class="col-avg">${fEuro(avg)}</td></tr>`;
+        };
+
+        const savingsRateValues = mStats.map(s => s.inc > 0 ? ((s.inc - s.exp) / s.inc * 100) : 0);
+        const totInc = mStats.reduce((a,b)=>a+b.inc, 0);
+        const totExp = mStats.reduce((a,b)=>a+b.exp, 0);
+        const totSavingsRate = totInc > 0 ? ((totInc - totExp) / totInc * 100) : 0;
+
+        const rateCells = savingsRateValues.map(v => `<td class="${v < threshold ? 'low-savings' : ''}">${v.toFixed(1)}%</td>`).join('');
+        const totRateCell = `<td style="font-weight:bold" class="${totSavingsRate < threshold ? 'low-savings' : ''}">${totSavingsRate.toFixed(1)}%</td>`;
+
+        document.getElementById('b-sum').innerHTML = buildRow('Entrate', mStats.map(s=>s.inc), 'val-inc') + buildRow('Uscite', mStats.map(s=>s.exp), 'val-exp') + buildRow('Risparmi', mStats.map(s=>s.inc-s.exp), '') + `<tr><td class="row-label">Tasso Risparmio</td>${rateCells}${totRateCell}<td class="col-avg">${totSavingsRate.toFixed(1)}%</td></tr>`;
         
-        renderAnnualTables(mStats, yearRecords);
-        updateCharts(mStats, selYear, yearRecords);
-        updateMonthlyDetail(yearRecords, selM);
-    }
-
-    function renderAnnualTables(mStats, yearRecords) {
-        const hHTML = '<th class="row-label">Cat</th>' + months.map(m => `<th>${m.substring(0,3)}</th>`).join('') + '<th>TOT</th>';
-        document.getElementById('h-sum').innerHTML = hHTML; document.getElementById('h-inc').innerHTML = hHTML; document.getElementById('h-exp').innerHTML = hHTML;
-
-        const buildRow = (lbl, data, cls) => `<tr><td class="row-label">${lbl}</td>${data.map(v => `<td class="${cls}">${fEuro(v)}</td>`).join('')}<td>${fEuro(data.reduce((a,b)=>a+b,0))}</td></tr>`;
-        
-        const bilRow = mStats.map(s => s.inc - s.exp);
-        const threshold = parseFloat(document.getElementById('savings-threshold').value) / 100;
-        const bilHTML = bilRow.map((v, i) => {
-            const perc = mStats[i].inc > 0 ? (v / mStats[i].inc) : 0;
-            return `<td class="${(perc < threshold && v < 500) ? 'low-savings' : ''}">${fEuro(v)}</td>`;
-        }).join('');
-
-        document.getElementById('b-sum').innerHTML = buildRow('Entrate', mStats.map(s=>s.inc), 'val-inc') + buildRow('Uscite', mStats.map(s=>s.exp), 'val-exp') + `<tr><td class="row-label">Bilancio</td>${bilHTML}<td>${fEuro(bilRow.reduce((a,b)=>a+b,0))}</td></tr>`;
-
-        const buildCatBody = (cats, type, target) => {
-            document.getElementById(target).innerHTML = cats.map(c => {
+        const buildCatTable = (cats, type, bodyId) => {
+            let html = '';
+            cats.forEach(c => {
                 let rowData = months.map((_, i) => yearRecords.filter(r => r.type === type && r.category === c.n && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0));
-                return buildRow(c.n, rowData, type==='Entrata'?'val-inc':'val-exp');
-            }).join('');
+                html += buildRow(c.n, rowData, type === 'Entrata' ? 'val-inc' : 'val-exp');
+            });
+            document.getElementById(bodyId).innerHTML = html;
         };
-        buildCatBody(catsInc, 'Entrata', 'b-inc'); buildCatBody(catsExp, 'Uscita', 'b-exp');
+        buildCatTable(catsInc, 'Entrata', 'b-inc'); buildCatTable(catsExp, 'Uscita', 'b-exp');
+
+        const buildMTable = (list, type, bodyId) => {
+            const body = document.getElementById(bodyId); body.innerHTML = '';
+            list.forEach(c => {
+                const real = yearRecords.filter(r => r.type === type && r.category === c.n && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
+                const diff = type === 'Entrata' ? (real - c.b) : (c.b - real);
+                body.innerHTML += `<tr><td class="bold-cat">${c.n}</td><td>${fEuro(c.b)}</td><td>${fEuro(real)}</td><td style="color:${diff>=0?'green':'red'}">${fEuro(diff)}</td></tr>`;
+            });
+        };
+        buildMTable(catsInc, 'Entrata', 'm-inc-body'); buildMTable(catsExp, 'Uscita', 'm-exp-body');
+        
+        const fS = document.getElementById('f-search').value.toLowerCase(); 
+        const fM = document.getElementById('f-month').value; 
+        const fT = document.getElementById('f-type').value; 
+        const fC = document.getElementById('f-cat').value;
+
+        const filtered = yearRecords.filter(r => {
+                const matchesSearch = r.desc.toLowerCase().includes(fS);
+                const matchesMonth = fM === "" || new Date(r.date).getMonth() == fM;
+                const matchesType = fT === "" || r.type === fT;
+                const matchesCat = fC === "" || r.category === fC;
+                return matchesSearch && matchesMonth && matchesType && matchesCat;
+            }).sort((a,b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+
+        document.getElementById('history-body').innerHTML = filtered.map(r => `<tr><td style="text-align:left">${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}${r.recurring ? ' 🔄' : ''}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">${fEuro(r.amount)}</td><td style="text-align:right"><button class="btn-edit-rec" onclick="editRecord(${r.id})">✎</button><button class="btn-x" onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
+        
+        // MOSTRA SOLO I TEMPLATE RICORRENTI ATTIVI
+        const activeTemplates = getActiveRecurringTemplates();
+        document.getElementById('recurring-list-body').innerHTML = activeTemplates.map(r => `<tr><td style="text-align:left">${r.desc}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">${fEuro(r.amount)}</td><td style="text-align:right"><button class="btn-x" title="Disattiva ricorrenza" onclick="toggleRecurringStatus('${r.desc}', '${r.category}', '${r.type}')">Disattiva</button></td></tr>`).join('');
+
+        updateCharts(mStats, selM, yearRecords, avgDivisor);
+        
+        const rendCatEdit = (list, type, divId) => { 
+            const sortedList = [...list].sort((a,b) => a.n.localeCompare(b.n));
+            document.getElementById(divId).innerHTML = sortedList.map((c, i) => `<div class="cat-item"><span>${c.n}</span><label style="font-size:0.7rem">Budget:</label><input type="number" step="0.01" value="${c.b}" onchange="updateBudget('${type}', ${i}, this.value)"><button class="btn-del-cat" onclick="delCat('${type}', ${i})">✕</button></div>`).join(''); 
+        };
+        rendCatEdit(catsInc, 'inc', 'edit-cats-inc'); rendCatEdit(catsExp, 'exp', 'edit-cats-exp');
     }
 
-    function updateCharts(mStats, selYear, yearRecords) {
-        // Main Bar Chart
+    function updateCharts(mStats, selM, yearRecords, avgDivisor) {
+        const standardOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: true } }, scales: { y: { beginAtZero: true, ticks: { callback: v => fEuro(v) } } } };
         if(cMain) cMain.destroy();
-        cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-
-        // Forecast Line Chart
-        const now = new Date();
-        const curMIdx = (selYear == now.getFullYear()) ? now.getMonth() : (selYear < now.getFullYear() ? 12 : -1);
-        let cum = 0, realD = [], forD = [];
-        const avgS = curMIdx >= 0 ? mStats.slice(0, curMIdx+1).reduce((a,b)=>a+(b.inc-b.exp),0) / (curMIdx+1) : 0;
-        for(let i=0; i<12; i++){
-            if(i <= curMIdx) { cum += (mStats[i].inc - mStats[i].exp); realD.push(cum); forD.push(null); }
-            else { if(i === curMIdx+1) forD[i-1] = cum; cum += avgS; forD.push(cum); realD.push(null); }
-        }
+        cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: standardOptions });
         if(cForecast) cForecast.destroy();
-        cForecast = new Chart(document.getElementById('forecastChart'), { type: 'line', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{label:'Reale', data:realD, borderColor:'#3498db', fill:false}, {label:'Proiezione', data:forD, borderColor:'#95a5a6', borderDash:[5,5], fill:false}] }, options: { responsive: true, maintainAspectRatio: false } });
-
-        // Avg Expense Charts
-        const catData = catsExp.map(c => ({ n: c.n, v: yearRecords.filter(r => r.type === 'Uscita' && r.category === c.n).reduce((s,r)=>s+r.amount,0) / (curMIdx+1 || 1) })).sort((a,b)=>b.v-a.v);
+        const monthlySavings = mStats.map(s => s.inc - s.exp);
+        let cumulative = 0; const cumulativeReal = []; const cumulativeForecast = [];
+        const selYear = document.getElementById('year-selector').value;
+        const now = new Date(); const curMonthIdx = (selYear === now.getFullYear().toString()) ? now.getMonth() : (parseInt(selYear) < now.getFullYear() ? 12 : -1);
+        const totalReal = monthlySavings.slice(0, curMonthIdx + 1).reduce((a, b) => a + b, 0);
+        const avgSavings = (curMonthIdx >= 0) ? totalReal / (curMonthIdx + 1) : 0;
+        for (let i = 0; i < 12; i++) { if (i <= curMonthIdx) { cumulative += monthlySavings[i]; cumulativeReal.push(cumulative); cumulativeForecast.push(null); } else { if (i === curMonthIdx + 1 && i > 0) cumulativeForecast[i-1] = cumulative; cumulative += avgSavings; cumulativeForecast.push(cumulative); cumulativeReal.push(null); } }
+        cForecast = new Chart(document.getElementById('forecastChart'), { type: 'line', data: { labels: months.map(m => m.substring(0, 3)), datasets: [{ label: 'Reale', data: cumulativeReal, borderColor: '#3498db', backgroundColor: '#3498db', fill: false, tension: 0.1, pointRadius: 4 }, { label: 'Previsione', data: cumulativeForecast, borderColor: '#95a5a6', borderDash: [5, 5], fill: false, tension: 0.1, pointRadius: 2 } ]}, options: { ...standardOptions, plugins: { ...standardOptions.plugins, legend: { display: true, labels: { boxWidth: 10, font: { size: 10 } } } } } });
+        const avgData = catsExp.map(c => ({ n: c.n, v: avgDivisor > 0 ? (yearRecords.filter(r => r.type === 'Uscita' && r.category === c.n).reduce((s,r)=>s+r.amount,0) / avgDivisor) : 0 }));
+        const totalAvgExp = avgData.reduce((s, d) => s + d.v, 0);
         if(cAvg) cAvg.destroy();
-        cAvg = new Chart(document.getElementById('avgExpChart'), { type: 'bar', data: { labels: catData.map(d=>d.n), datasets: [{ data: catData.map(d=>d.v), backgroundColor: '#e74c3c' }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+        cAvg = new Chart(document.getElementById('avgExpChart'), { type: 'bar', data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: '#e74c3c' }] }, options: { ...standardOptions, scales: { ...standardOptions.scales, x: { ticks: { minRotation: 90, maxRotation: 90 } } } } });
         if(cAvgPie) cAvgPie.destroy();
-        cAvgPie = new Chart(document.getElementById('avgExpPieChart'), { type: 'pie', data: { labels: catData.map(d=>d.n), datasets: [{ data: catData.map(d=>d.v), backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40'] }] }, options: { responsive: true, maintainAspectRatio: false } });
+        cAvgPie = new Chart(document.getElementById('avgExpPieChart'), { type: 'pie', data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: ['#e74c3c', '#3498db', '#27ae60', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }, tooltip: { enabled: true, callbacks: { label: (c) => c.label + ': ' + fEuro(c.parsed) + " (" + (totalAvgExp > 0 ? ((c.parsed / totalAvgExp) * 100).toFixed(1) : 0) + "%)" } } } } });
+        const realInc = yearRecords.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
+        const prevInc = catsInc.reduce((s,c)=>s+c.b, 0);
+        if(cMInc) cMInc.destroy();
+        cMInc = new Chart(document.getElementById('mChartInc'), { type: 'bar', data: { labels: ['Previsto', 'Reale'], datasets: [{ data: [prevInc, realInc], backgroundColor: ['#3498db', '#27ae60'] }] }, options: standardOptions });
+        const realExp = yearRecords.filter(r => r.type === 'Uscita' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
+        const prevExp = catsExp.reduce((s,c)=>s+c.b, 0);
+        if(cMExp) cMExp.destroy();
+        cMExp = new Chart(document.getElementById('mChartExp'), { type: 'bar', data: { labels: ['Previsto', 'Reale'], datasets: [{ data: [prevExp, realExp], backgroundColor: ['#3498db', '#e74c3c'] }] }, options: standardOptions });
     }
 
-    function updateMonthlyDetail(yearRecords, selM) {
-        const buildM = (cats, type, bodyId, chartId) => {
-            const data = cats.map(c => ({
-                n: c.n, b: c.b,
-                r: yearRecords.filter(r => r.type === type && r.category === c.n && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0)
-            }));
-            document.getElementById(bodyId).innerHTML = data.map(d => {
-                const diff = type === 'Entrata' ? (d.r - d.b) : (d.b - d.r);
-                return `<tr><td class="bold-cat">${d.n}</td><td>${fEuro(d.b)}</td><td>${fEuro(d.r)}</td><td style="color:${diff>=0?'green':'red'}">${fEuro(diff)}</td></tr>`;
-            }).join('');
-            
-            let ctx = document.getElementById(chartId);
-            if(type === 'Entrata') {
-                if(cMInc) cMInc.destroy();
-                cMInc = new Chart(ctx, { type: 'bar', data: { labels: data.map(d=>d.n), datasets: [{label:'Budget', data:data.map(d=>d.b), backgroundColor:'#bdc3c7'},{label:'Reale', data:data.map(d=>d.r), backgroundColor:'#27ae60'}] }, options: { responsive: true, maintainAspectRatio: false } });
-            } else {
-                if(cMExp) cMExp.destroy();
-                cMExp = new Chart(ctx, { type: 'bar', data: { labels: data.map(d=>d.n), datasets: [{label:'Budget', data:data.map(d=>d.b), backgroundColor:'#bdc3c7'},{label:'Reale', data:data.map(d=>d.r), backgroundColor:'#e74c3c'}] }, options: { responsive: true, maintainAspectRatio: false } });
-            }
-        };
-        buildM(catsInc, 'Entrata', 'm-inc-body', 'mChartInc'); buildM(catsExp, 'Uscita', 'm-exp-body', 'mChartExp');
-    }
-
-    // --- RENDER COMPONENTI MINORI ---
-    function renderRecurringTable() {
-        document.getElementById('recurring-list-body').innerHTML = recurringTemplates.map((r, i) => `<tr><td style="text-align:left">${r.desc}</td><td style="text-align:left">${r.category}</td><td>${new Date(r.date).getDate()}</td><td style="text-align:right">${fEuro(r.amount)}</td><td style="text-align:right"><button class="btn-edit-rec" onclick="editRecTemp(${i})">✎</button><button class="btn-x" onclick="delRecTemp(${i})">✕</button></td></tr>`).join('');
-    }
-
-    function renderHistoryTable(yearRecords) {
-        const fS = document.getElementById('f-search').value.toLowerCase();
-        const fM = document.getElementById('f-month').value;
-        const fT = document.getElementById('f-type').value;
-        const filtered = yearRecords.filter(r => r.desc.toLowerCase().includes(fS) && (fM === "" || new Date(r.date).getMonth() == fM) && (fT === "" || r.type === fT)).sort((a,b) => new Date(b.date) - new Date(a.date));
-        document.getElementById('history-body').innerHTML = filtered.map(r => `<tr><td style="text-align:left">${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}${r.isFromRec?' 🔄':''}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">${fEuro(r.amount)}</td><td style="text-align:right"><button class="btn-edit-rec" onclick="editRecord(${r.id})">✎</button><button class="btn-x" onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
-    }
-
-    function renderSettings() {
-        const buildEdit = (list, type, divId) => {
-            document.getElementById(divId).innerHTML = list.map((c, i) => `<div class="cat-item"><span>${c.n}</span><input type="number" value="${c.b}" onchange="cats${type==='inc'?'Inc':'Exp'}[${i}].b=parseFloat(this.value);saveToCloud()"><button onclick="cats${type==='inc'?'Inc':'Exp'}.splice(${i},1);render();saveToCloud()">✕</button></div>`).join('');
-        };
-        buildEdit(catsInc, 'inc', 'edit-cats-inc'); buildEdit(catsExp, 'exp', 'edit-cats-exp');
-    }
-
-    // --- UI & NAVIGATION ---
     function setType(t) { currentType = t; document.getElementById('btn-inc').classList.toggle('inc-active', t === 'Entrata'); document.getElementById('btn-exp').classList.toggle('exp-active', t === 'Uscita'); updateCatDropdown(); }
-    function updateCatDropdown() { const list = currentType === 'Entrata' ? catsInc : catsExp; document.getElementById('cat-select').innerHTML = list.map(c => `<option value="${c.n}">${c.n}</option>`).join(''); }
+    function updateCatDropdown() { const list = currentType === 'Entrata' ? [...catsInc] : [...catsExp]; list.sort((a,b)=>a.n.localeCompare(b.n)); document.getElementById('cat-select').innerHTML = list.map(c => `<option value="${c.n}">${c.n}</option>`).join(''); }
     function showPage(id, btn) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.add('active'); btn.classList.add('active'); render(); }
-    function addCat(type) { const input = document.getElementById(type==='inc'?'new-cat-inc':'new-cat-exp'); if(input.value) { if(type==='inc') catsInc.push({n:input.value, b:0}); else catsExp.push({n:input.value, b:0}); input.value=''; render(); saveToCloud(); } }
-    function resetForm() { document.getElementById('amount').value = ''; document.getElementById('desc').value = ''; document.getElementById('edit-id').value = ''; document.getElementById('form-title').innerText = "Nuovo Movimento"; document.getElementById('is-recurring').checked = false; }
-
-    // --- EXCEL ---
-    function exportToExcel() {
-        const data = records.map(r => ({ Data: r.date, Desc: r.desc, Cat: r.category, Tipo: r.type, Euro: r.amount }));
-        const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Wallet");
-        XLSX.writeFile(wb, "Wallet_Export.xlsx");
+    
+    async function addRecord() {
+        const inputDate = document.getElementById('date').value;
+        const today = new Date().toISOString().split('T')[0];
+        if (inputDate > today) { alert("Errore: Non puoi inserire movimenti con una data futura."); return; }
+        const amt = parseFloat(document.getElementById('amount').value); if(!amt) return;
+        const editId = document.getElementById('edit-id').value;
+        if (editId) { records = records.filter(r => r.id != editId); document.getElementById('edit-id').value = ""; document.getElementById('form-title').innerText = "Nuovo Movimento"; }
+        records.push({ id: Date.now(), type: currentType, date: inputDate, desc: document.getElementById('desc').value, category: document.getElementById('cat-select').value, amount: amt, recurring: document.getElementById('is-recurring').checked });
+        render(); await saveToCloud();
+        document.getElementById('amount').value = ''; document.getElementById('desc').value = ''; document.getElementById('is-recurring').checked = false;
     }
-    function importFromExcel(input) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const data = new Uint8Array(e.target.result); const wb = XLSX.read(data, {type:'array'});
-            const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-            json.forEach(row => { records.push({ id: Date.now()+Math.random(), type: row.Tipo||'Uscita', date: row.Data||new Date().toISOString().split('T')[0], desc: row.Desc||'', category: row.Cat||'Varie', amount: row.Euro||0 }); });
-            render(); saveToCloud();
-        };
-        reader.readAsArrayBuffer(input.files[0]);
-    }
+    
+    async function delRecord(id) { if(confirm("Eliminare?")) { records = records.filter(r=>r.id!==id); render(); await saveToCloud(); } }
+    function editRecord(id) { const r = records.find(rec => rec.id === id); if (!r) return; setType(r.type); document.getElementById('date').value = r.date; document.getElementById('desc').value = r.desc; document.getElementById('cat-select').value = r.category; document.getElementById('amount').value = r.amount; document.getElementById('is-recurring').checked = r.recurring || false; document.getElementById('edit-id').value = r.id; document.getElementById('form-title').innerText = "Modifica Movimento"; window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
-    // --- INIT ---
     window.onload = () => {
         const yearSel = document.getElementById('year-selector');
+        const fMonth = document.getElementById('f-month');
+        const mFilt = document.getElementById('month-filter');
         for(let y=2024; y<=2027; y++) { const opt=document.createElement('option'); opt.value=y; opt.text=y; if(y===2026) opt.selected=true; yearSel.appendChild(opt); }
-        months.forEach((m,i) => { 
-            document.getElementById('f-month').innerHTML += `<option value="${i}">${m}</option>`;
-            document.getElementById('month-filter').innerHTML += `<option value="${i}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`;
-        });
-        document.getElementById('date').value = new Date().toISOString().split('T')[0];
+        months.forEach((m,i) => { fMonth.innerHTML += `<option value="${i}">${m}</option>`; mFilt.innerHTML += `<option value="${i}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`; });
+        const todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById('date').value = todayStr;
+        document.getElementById('date').max = todayStr;
     };
 </script>
 </body>
