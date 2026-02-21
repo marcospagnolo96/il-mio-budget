@@ -344,6 +344,9 @@
         const curMonth = now.getMonth();
         const threshold = parseFloat(document.getElementById('savings-threshold').value) || 20;
         
+        // Blocca date future nel selettore
+        document.getElementById('date').max = now.toISOString().split('T')[0];
+
         let avgDivisor = 12;
         if (selYear === curYear) { avgDivisor = curMonth + 1; } 
         else if (parseInt(selYear) > parseInt(curYear)) { avgDivisor = 0; }
@@ -409,7 +412,6 @@
         const fT = document.getElementById('f-type').value; 
         const fC = document.getElementById('f-cat').value;
 
-        // FILTRO E RENDER STORICO
         const filtered = yearRecords.filter(r => {
                 const matchesSearch = r.desc.toLowerCase().includes(fS);
                 const matchesMonth = fM === "" || new Date(r.date).getMonth() == fM;
@@ -420,7 +422,6 @@
 
         document.getElementById('history-body').innerHTML = filtered.map(r => `<tr><td style="text-align:left">${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}${r.recurring ? ' 🔄' : ''}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">${fEuro(r.amount)}</td><td style="text-align:right"><button class="btn-edit-rec" onclick="editRecord(${r.id})">✎</button><button class="btn-x" onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
         
-        // RENDER RICORRENTI (NUOVO)
         const recurringList = records.filter(r => r.recurring).sort((a,b) => b.id - a.id);
         document.getElementById('recurring-list-body').innerHTML = recurringList.map(r => `<tr><td style="text-align:left">${r.desc}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">${fEuro(r.amount)}</td><td style="text-align:right"><button class="btn-edit-rec" onclick="editRecord(${r.id})">✎</button><button class="btn-x" onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
 
@@ -470,7 +471,22 @@
         const totalAvgExp = avgData.reduce((s, d) => s + d.v, 0);
 
         if(cAvg) cAvg.destroy();
-        cAvg = new Chart(document.getElementById('avgExpChart'), { type: 'bar', data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: '#e74c3c' }] }, options: standardOptions });
+        cAvg = new Chart(document.getElementById('avgExpChart'), { 
+            type: 'bar', 
+            data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: '#e74c3c' }] }, 
+            options: {
+                ...standardOptions,
+                scales: {
+                    ...standardOptions.scales,
+                    x: {
+                        ticks: {
+                            minRotation: 90, // Forza rotazione verticale
+                            maxRotation: 90
+                        }
+                    }
+                }
+            } 
+        });
         
         if(cAvgPie) cAvgPie.destroy();
         cAvgPie = new Chart(document.getElementById('avgExpPieChart'), { 
@@ -519,6 +535,15 @@
     function showPage(id, btn) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.add('active'); btn.classList.add('active'); render(); }
     
     async function addRecord() {
+        const inputDate = document.getElementById('date').value;
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Verifica logica data futura
+        if (inputDate > today) {
+            alert("Errore: Non puoi inserire movimenti con una data futura.");
+            return;
+        }
+
         const amt = parseFloat(document.getElementById('amount').value); if(!amt) return;
         const editId = document.getElementById('edit-id').value;
         
@@ -528,7 +553,7 @@
             document.getElementById('form-title').innerText = "Nuovo Movimento";
         }
 
-        records.push({ id: Date.now(), type: currentType, date: document.getElementById('date').value, desc: document.getElementById('desc').value, category: document.getElementById('cat-select').value, amount: amt, recurring: document.getElementById('is-recurring').checked });
+        records.push({ id: Date.now(), type: currentType, date: inputDate, desc: document.getElementById('desc').value, category: document.getElementById('cat-select').value, amount: amt, recurring: document.getElementById('is-recurring').checked });
         render(); await saveToCloud();
         document.getElementById('amount').value = ''; document.getElementById('desc').value = '';
         document.getElementById('is-recurring').checked = false;
@@ -559,7 +584,9 @@
             fMonth.innerHTML += `<option value="${i}">${m}</option>`; 
             mFilt.innerHTML += `<option value="${i}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`;
         });
-        document.getElementById('date').value = new Date().toISOString().split('T')[0];
+        const todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById('date').value = todayStr;
+        document.getElementById('date').max = todayStr;
     };
 </script>
 </body>
