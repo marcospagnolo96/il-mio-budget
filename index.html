@@ -253,22 +253,16 @@
     }
 
     async function checkRecurringMoves() {
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const nowStr = now.toISOString().split('T')[0];
+        const nowStr = new Date().toISOString().split('T')[0];
         let changed = false;
 
         records.forEach(r => {
             if (r.recurring && r.date <= nowStr) {
                 r.recurring = false;
+                const oldDate = new Date(r.date);
+                const nextDate = new Date(oldDate.getFullYear(), oldDate.getMonth() + 1, oldDate.getDate());
                 
-                const d = r.date.split('-'); 
-                // Creiamo la data successiva specificando anno, mese+1 (perché JS usa 0-11) e giorno
-                // Usando d[1] direttamente (che è 1-based) puntiamo già al mese dopo in formato JS 0-based.
-                let nextDate = new Date(parseInt(d[0]), parseInt(d[1]), parseInt(d[2]));
-
-                const expectedMonth = (parseInt(d[1])) % 12;
-                if (nextDate.getMonth() !== expectedMonth) {
+                if (nextDate.getMonth() !== (oldDate.getMonth() + 1) % 12) {
                     nextDate.setDate(0);
                 }
 
@@ -399,7 +393,7 @@
         const curMonth = now.getMonth();
         const threshold = parseFloat(document.getElementById('savings-threshold').value) || 20;
         
-        document.getElementById('date').max = "";
+        document.getElementById('date').max = now.toISOString().split('T')[0];
 
         let avgDivisor = 12;
         if (selYear === curYear) { avgDivisor = curMonth + 1; } 
@@ -523,9 +517,7 @@
         const editId = document.getElementById('edit-id').value;
         if (editId) { records = records.filter(r => r.id != editId); document.getElementById('edit-id').value = ""; document.getElementById('form-title').innerText = "Nuovo Movimento"; }
         records.push({ id: Date.now(), type: currentType, date: inputDate, desc: document.getElementById('desc').value, category: document.getElementById('cat-select').value, amount: amt, recurring: document.getElementById('is-recurring').checked });
-        
         await checkRecurringMoves();
-        
         render(); await saveToCloud();
         document.getElementById('amount').value = ''; document.getElementById('desc').value = ''; document.getElementById('is-recurring').checked = false;
     }
@@ -541,6 +533,7 @@
         months.forEach((m,i) => { fMonth.innerHTML += `<option value="${i}">${m}</option>`; mFilt.innerHTML += `<option value="${i}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`; });
         const todayStr = new Date().toISOString().split('T')[0];
         document.getElementById('date').value = todayStr;
+        document.getElementById('date').max = "";
     };
 </script>
 </body>
