@@ -18,9 +18,8 @@
         body.dark-theme input, body.dark-theme select { background: #333; color: white; border-color: #555; }
         body.dark-theme .row-label { background: #2d2d2d; }
         body.dark-theme .col-avg { background: #1e2a3a; }
-        /* Correzione elementi richiesti */
         body.dark-theme .btn-save { background: var(--primary); color: white; }
-        body.dark-theme #year-selector { color: white; background: #252525; }
+        body.dark-theme #year-selector { color: white !important; background-color: #252525 !important; }
 
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
@@ -90,7 +89,7 @@
         <h2>📊 Wallet</h2>
         <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌓</button>
     </div>
-    <select id="year-selector" onchange="render()" style="width: auto; font-size: 1rem; border: none; background: transparent; font-weight: bold; cursor: pointer; color: inherit;"></select>
+    <select id="year-selector" onchange="render()" style="width: auto; font-size: 1rem; border: none; background: transparent; font-weight: bold; cursor: pointer;"></select>
     
     <button class="nav-btn active" onclick="showPage('dashboard', this)">Riepilogo Annuale</button>
     <button class="nav-btn" onclick="showPage('monthly', this)">Vista Mensile</button>
@@ -414,7 +413,7 @@
     function updateCharts(mStats, selM, yearRecords, avgDivisor) {
         const standardOptions = { 
             responsive: true, maintainAspectRatio: false, 
-            plugins: { legend: { display: false } }, 
+            plugins: { legend: { display: false }, tooltip: { enabled: true } }, 
             scales: { y: { beginAtZero: true, ticks: { callback: v => fEuro(v) } } } 
         };
         
@@ -441,7 +440,7 @@
                 { label: 'Reale', data: cumulativeReal, borderColor: '#3498db', backgroundColor: '#3498db', fill: false, tension: 0.1, pointRadius: 4 },
                 { label: 'Previsione', data: cumulativeForecast, borderColor: '#95a5a6', borderDash: [5, 5], fill: false, tension: 0.1, pointRadius: 2 }
             ]},
-            options: { ...standardOptions, plugins: { legend: { display: true, labels: { boxWidth: 10, font: { size: 10 } } } } }
+            options: { ...standardOptions, plugins: { ...standardOptions.plugins, legend: { display: true, labels: { boxWidth: 10, font: { size: 10 } } } } }
         });
 
         const avgData = catsExp.map(c => ({ n: c.n, v: avgDivisor > 0 ? (yearRecords.filter(r => r.type === 'Uscita' && r.category === c.n).reduce((s,r)=>s+r.amount,0) / avgDivisor) : 0 }));
@@ -452,7 +451,24 @@
         cAvgPie = new Chart(document.getElementById('avgExpPieChart'), { 
             type: 'pie', 
             data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: ['#e74c3c', '#3498db', '#27ae60', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c'] }] }, 
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } } } } 
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { 
+                    legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } },
+                    tooltip: { 
+                        enabled: true,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) label += ': ';
+                                if (context.parsed !== null) label += fEuro(context.parsed);
+                                return label;
+                            }
+                        }
+                    } 
+                } 
+            } 
         });
 
         const realInc = yearRecords.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
