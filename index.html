@@ -303,7 +303,16 @@
             return `<tr><td class="row-label">${lbl}</td>${data.map(v => `<td class="${cls}">${fEuro(v)}</td>`).join('')}<td style="font-weight:bold">${fEuro(tot)}</td><td class="col-avg">${fEuro(avg)}</td></tr>`;
         };
 
-        document.getElementById('b-sum').innerHTML = buildRow('Entrate', mStats.map(s=>s.inc), 'val-inc') + buildRow('Uscite', mStats.map(s=>s.exp), 'val-exp') + buildRow('Risparmi', mStats.map(s=>s.inc-s.exp), '');
+        const savingsRateData = mStats.map(s => s.inc > 0 ? ((s.inc - s.exp) / s.inc * 100).toFixed(1) + '%' : '0%');
+        const totInc = mStats.reduce((a,b)=>a+b.inc, 0);
+        const totExp = mStats.reduce((a,b)=>a+b.exp, 0);
+        const totSavingsRate = totInc > 0 ? ((totInc - totExp) / totInc * 100).toFixed(1) + '%' : '0%';
+
+        document.getElementById('b-sum').innerHTML = 
+            buildRow('Entrate', mStats.map(s=>s.inc), 'val-inc') + 
+            buildRow('Uscite', mStats.map(s=>s.exp), 'val-exp') + 
+            buildRow('Risparmi', mStats.map(s=>s.inc-s.exp), '') +
+            `<tr><td class="row-label">Tasso Risparmio</td>${savingsRateData.map(v => `<td>${v}</td>`).join('')}<td style="font-weight:bold">${totSavingsRate}</td><td class="col-avg">-</td></tr>`;
         
         const buildCatTable = (cats, type, bodyId) => {
             let html = '';
