@@ -116,7 +116,7 @@
         <button id="btn-save-main" class="btn-save" onclick="addRecord()">SALVA</button>
     </div>
 
-    <div class="form-box" style="border-top: 3px solid var(--info);">
+    <div class="form-box">
         <h4>Target Risparmio</h4>
         <div style="display: flex; flex-direction: column; gap: 2px;">
             <label style="font-size: 0.7rem; color: #7f8c8d; margin-bottom: 2px;">Soglia Minima Desiderata:</label>
@@ -344,7 +344,6 @@
         const curMonth = now.getMonth();
         const threshold = parseFloat(document.getElementById('savings-threshold').value) || 20;
         
-        // Blocca date future nel selettore
         document.getElementById('date').max = now.toISOString().split('T')[0];
 
         let avgDivisor = 12;
@@ -480,7 +479,7 @@
                     ...standardOptions.scales,
                     x: {
                         ticks: {
-                            minRotation: 90, // Forza rotazione verticale
+                            minRotation: 90, 
                             maxRotation: 90
                         }
                     }
@@ -537,22 +536,10 @@
     async function addRecord() {
         const inputDate = document.getElementById('date').value;
         const today = new Date().toISOString().split('T')[0];
-        
-        // Verifica logica data futura
-        if (inputDate > today) {
-            alert("Errore: Non puoi inserire movimenti con una data futura.");
-            return;
-        }
-
+        if (inputDate > today) { alert("Errore: Non puoi inserire movimenti con una data futura."); return; }
         const amt = parseFloat(document.getElementById('amount').value); if(!amt) return;
         const editId = document.getElementById('edit-id').value;
-        
-        if (editId) {
-            records = records.filter(r => r.id != editId);
-            document.getElementById('edit-id').value = "";
-            document.getElementById('form-title').innerText = "Nuovo Movimento";
-        }
-
+        if (editId) { records = records.filter(r => r.id != editId); document.getElementById('edit-id').value = ""; document.getElementById('form-title').innerText = "Nuovo Movimento"; }
         records.push({ id: Date.now(), type: currentType, date: inputDate, desc: document.getElementById('desc').value, category: document.getElementById('cat-select').value, amount: amt, recurring: document.getElementById('is-recurring').checked });
         render(); await saveToCloud();
         document.getElementById('amount').value = ''; document.getElementById('desc').value = '';
