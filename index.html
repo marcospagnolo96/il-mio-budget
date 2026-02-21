@@ -98,8 +98,17 @@
 
 <main class="main-content">
     <div id="dashboard" class="page active">
-        <h3>📊 Risparmi Mensili</h3>
-        <div class="chart-box"><canvas id="mainChart"></canvas></div>
+        <h3>📊 Analisi Risparmi & Previsioni</h3>
+        <div class="chart-row">
+            <div class="chart-box">
+                <h4 style="font-size: 0.8rem; margin: 0 0 5px 0;">Risparmi Mensili</h4>
+                <canvas id="mainChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h4 style="font-size: 0.8rem; margin: 0 0 5px 0;">Proiezione Fine Anno (Cumulativo)</h4>
+                <canvas id="forecastChart"></canvas>
+            </div>
+        </div>
         <h3>📊 Riepilogo</h3>
         <div class="table-container"><table class="table-annual"><thead><tr id="h-sum"></tr></thead><tbody id="b-sum"></tbody></table></div>
         <h3>📈 Entrate per Categoria</h3>
@@ -162,7 +171,7 @@
     const months = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
     let records = [], catsInc = [{n: "Stipendio", b: 2000}], catsExp = [{n: "Cibo", b: 400}, {n: "Casa", b: 600}];
     let currentType = 'Entrata';
-    let cMain, cAvg, cAvgPie, cMInc, cMExp;
+    let cMain, cForecast, cAvg, cAvgPie, cMInc, cMExp;
 
     function fEuro(v) {
         return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(v);
@@ -362,8 +371,52 @@
 
     function updateCharts(mStats, selM, yearRecords, avgDivisor) {
         const standardOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => fEuro(v) } } } };
+        
+        // Bar Chart (Monthly Savings)
         if(cMain) cMain.destroy();
         cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: standardOptions });
+
+        // Forecast Chart (Cumulative Savings)
+        if(cForecast) cForecast.destroy();
+        const monthlySavings = mStats.map(s => s.inc - s.exp);
+        let cumulative = 0;
+        const cumulativeReal = [];
+        const cumulativeForecast = [];
+        
+        const selYear = document.getElementById('year-selector').value;
+        const now = new Date();
+        const curMonth = (selYear === now.getFullYear().toString()) ? now.getMonth() : (parseInt(selYear) < now.getFullYear() ? 12 : -1);
+        
+        const totalReal = monthlySavings.slice(0, curMonth + 1).reduce((a, b) => a + b, 0);
+        const avgSavings = (curMonth >= 0) ? totalReal / (curMonth + 1) : 0;
+
+        for (let i = 0; i < 12; i++) {
+            if (i <= curMonth) {
+                cumulative += monthlySavings[i];
+                cumulativeReal.push(cumulative);
+                cumulativeForecast.push(null);
+            } else {
+                if (i === curMonth + 1 && i > 0) {
+                    cumulativeForecast[i-1] = cumulative; // Connect lines
+                }
+                cumulative += avgSavings;
+                cumulativeForecast.push(cumulative);
+                cumulativeReal.push(null);
+            }
+        }
+
+        cForecast = new Chart(document.getElementById('forecastChart'), {
+            type: 'line',
+            data: {
+                labels: months.map(m => m.substring(0, 3)),
+                datasets: [
+                    { label: 'Reale', data: cumulativeReal, borderColor: '#3498db', backgroundColor: '#3498db', fill: false, tension: 0.1, pointRadius: 4 },
+                    { label: 'Previsione', data: cumulativeForecast, borderColor: '#95a5a6', borderDash: [5, 5], fill: false, tension: 0.1, pointRadius: 2 }
+                ]
+            },
+            options: { ...standardOptions, plugins: { legend: { display: true, labels: { boxWidth: 10, font: { size: 10 } } } } }
+        });
+
         const avgData = catsExp.map(c => ({ n: c.n, v: avgDivisor > 0 ? (yearRecords.filter(r => r.type === 'Uscita' && r.category === c.n).reduce((s,r)=>s+r.amount,0) / avgDivisor) : 0 }));
         if(cAvg) cAvg.destroy();
         cAvg = new Chart(document.getElementById('avgExpChart'), { type: 'bar', data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: '#e74c3c' }] }, options: { ...standardOptions, scales: { ...standardOptions.scales, x: { ticks: { minRotation: 90, maxRotation: 90 } } } } });
