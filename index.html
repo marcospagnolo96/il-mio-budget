@@ -151,31 +151,33 @@
         <h3>⚙️ Impostazioni, Categorie & Obiettivi</h3>
         <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; align-items: flex-start;">
             
-            <div class="form-box" style="flex:1; min-width: 250px; margin-top:0;">
-                <h4 id="form-title">Nuovo Movimento</h4>
-                <div class="type-selector">
-                    <button id="btn-inc" class="type-btn inc-active" onclick="setType('Entrata')">Entrata</button>
-                    <button id="btn-exp" class="type-btn" onclick="setType('Uscita')">Uscita</button>
+            <div style="flex:1; min-width: 250px; display: flex; flex-direction: column; gap: 0px;">
+                <div class="form-box" style="margin-top:0;">
+                    <h4 id="form-title">Nuovo Movimento</h4>
+                    <div class="type-selector">
+                        <button id="btn-inc" class="type-btn inc-active" onclick="setType('Entrata')">Entrata</button>
+                        <button id="btn-exp" class="type-btn" onclick="setType('Uscita')">Uscita</button>
+                    </div>
+                    <input type="date" id="date">
+                    <input type="text" id="desc" placeholder="Descrizione...">
+                    <select id="cat-select"></select>
+                    <input type="number" id="amount" step="0.01" placeholder="Importo €">
+                    <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 8px;">
+                        <input type="checkbox" id="is-recurring" style="width: auto; margin: 0;">
+                        <label for="is-recurring" style="font-size: 0.75rem;">Ricorrente</label>
+                    </div>
+                    <input type="hidden" id="edit-id" value="">
+                    <button id="btn-save-main" class="btn-save" onclick="addRecord()">SALVA</button>
                 </div>
-                <input type="date" id="date">
-                <input type="text" id="desc" placeholder="Descrizione...">
-                <select id="cat-select"></select>
-                <input type="number" id="amount" step="0.01" placeholder="Importo €">
-                <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 8px;">
-                    <input type="checkbox" id="is-recurring" style="width: auto; margin: 0;">
-                    <label for="is-recurring" style="font-size: 0.75rem;">Ricorrente</label>
-                </div>
-                <input type="hidden" id="edit-id" value="">
-                <button id="btn-save-main" class="btn-save" onclick="addRecord()">SALVA</button>
-            </div>
 
-            <div class="form-box" style="flex:1; min-width: 250px; margin-top:0;">
-                <h4>Target Risparmio</h4>
-                <div style="display: flex; flex-direction: column; gap: 2px;">
-                    <label style="font-size: 0.7rem; color: #7f8c8d; margin-bottom: 2px;">Soglia Minima Desiderata:</label>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <input type="number" id="savings-threshold" value="20" onchange="render(); saveToCloud();" style="margin-bottom:0; flex: 1;">
-                        <span style="font-weight: bold; font-size: 0.9rem;">%</span>
+                <div class="form-box">
+                    <h4>Target Risparmio</h4>
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <label style="font-size: 0.7rem; color: #7f8c8d; margin-bottom: 2px;">Soglia Minima Desiderata:</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="number" id="savings-threshold" value="20" onchange="render(); saveToCloud();" style="margin-bottom:0; flex: 1;">
+                            <span style="font-weight: bold; font-size: 0.9rem;">%</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -425,7 +427,7 @@
         const buildMTable = (list, type, bodyId) => {
             const body = document.getElementById(bodyId); body.innerHTML = '';
             list.forEach(c => {
-                const real = yearRecords.filter(r => r.type === type && r.category === c.n && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
+                const real = yearRecords.filter(r => r.type === 'Entrata' && r.category === c.n && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
                 const diff = type === 'Entrata' ? (real - c.b) : (c.b - real);
                 body.innerHTML += `<tr><td class="bold-cat">${c.n}</td><td>${fEuro(c.b)}</td><td>${fEuro(real)}</td><td style="color:${diff>=0?'green':'red'}">${fEuro(diff)}</td></tr>`;
             });
