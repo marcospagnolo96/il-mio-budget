@@ -191,6 +191,15 @@
                 <div id="edit-cats-exp"></div>
             </div>
         </div>
+        
+        <h3>🔄 Movimenti Ricorrenti</h3>
+        <div class="table-container" style="margin-bottom: 20px; border: 1px solid #f1c40f; background: #fffdf0;">
+            <table class="no-lines">
+                <thead><tr><th style="text-align:left">Descrizione</th><th style="text-align:left">Categoria</th><th style="text-align:center">Tipo</th><th style="text-align:right">Importo</th><th style="text-align:right">Azioni</th></tr></thead>
+                <tbody id="recurring-list-body"></tbody>
+            </table>
+        </div>
+
         <h3>📝 Storico Movimenti</h3>
         <div class="form-box" style="display:flex; gap:10px; margin-bottom:15px; align-items: center; flex-wrap: wrap;">
             <input type="text" id="f-search" placeholder="Cerca..." oninput="render()" style="flex:1; margin-bottom:0">
@@ -400,6 +409,7 @@
         const fT = document.getElementById('f-type').value; 
         const fC = document.getElementById('f-cat').value;
 
+        // FILTRO E RENDER STORICO
         const filtered = yearRecords.filter(r => {
                 const matchesSearch = r.desc.toLowerCase().includes(fS);
                 const matchesMonth = fM === "" || new Date(r.date).getMonth() == fM;
@@ -410,6 +420,10 @@
 
         document.getElementById('history-body').innerHTML = filtered.map(r => `<tr><td style="text-align:left">${r.date.split('-').reverse().join('/')}</td><td style="text-align:left">${r.desc}${r.recurring ? ' 🔄' : ''}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">${fEuro(r.amount)}</td><td style="text-align:right"><button class="btn-edit-rec" onclick="editRecord(${r.id})">✎</button><button class="btn-x" onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
         
+        // RENDER RICORRENTI (NUOVO)
+        const recurringList = records.filter(r => r.recurring).sort((a,b) => b.id - a.id);
+        document.getElementById('recurring-list-body').innerHTML = recurringList.map(r => `<tr><td style="text-align:left">${r.desc}</td><td style="text-align:left">${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td style="text-align:right">${fEuro(r.amount)}</td><td style="text-align:right"><button class="btn-edit-rec" onclick="editRecord(${r.id})">✎</button><button class="btn-x" onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
+
         updateCharts(mStats, selM, yearRecords, avgDivisor);
         
         const rendCatEdit = (list, type, divId) => { 
@@ -517,6 +531,7 @@
         records.push({ id: Date.now(), type: currentType, date: document.getElementById('date').value, desc: document.getElementById('desc').value, category: document.getElementById('cat-select').value, amount: amt, recurring: document.getElementById('is-recurring').checked });
         render(); await saveToCloud();
         document.getElementById('amount').value = ''; document.getElementById('desc').value = '';
+        document.getElementById('is-recurring').checked = false;
     }
     
     async function delRecord(id) { if(confirm("Eliminare?")) { records = records.filter(r=>r.id!==id); render(); await saveToCloud(); } }
