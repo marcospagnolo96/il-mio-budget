@@ -47,6 +47,8 @@
         .col-avg { background: #f0f7ff; font-weight: bold; color: var(--info); }
         .val-inc { color: var(--success); font-weight: bold; }
         .val-exp { color: var(--danger); font-weight: bold; }
+        .low-savings { color: var(--danger); font-weight: bold; background: #fff5f5; }
+        
         .chart-box { height: 280px; background: white; border-radius: 10px; padding: 10px; margin-bottom: 15px; border: 1px solid #eee; }
         .cat-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; background: #f9f9f9; padding: 8px; border-radius: 5px; border: 1px solid #eee; }
         .cat-item span { font-weight: bold; flex: 1; }
@@ -139,17 +141,23 @@
     </div>
 
     <div id="history" class="page">
-        <h3>⚙️ Gestione Budget Categorie</h3>
-        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
-            <div style="flex:1; background:white; padding:15px; border-radius:10px; border:1px solid #ddd;">
+        <h3>⚙️ Impostazioni e Categorie</h3>
+        <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
+            <div style="flex:1; min-width: 250px; background:white; padding:15px; border-radius:10px; border:1px solid #ddd;">
                 <h4 class="val-inc">Budget Entrate</h4>
                 <div style="display:flex; gap:5px; margin-bottom:10px;"><input type="text" id="new-cat-inc" placeholder="Nuova..."><button onclick="addCat('inc')">+</button></div>
                 <div id="edit-cats-inc"></div>
             </div>
-            <div style="flex:1; background:white; padding:15px; border-radius:10px; border:1px solid #ddd;">
+            <div style="flex:1; min-width: 250px; background:white; padding:15px; border-radius:10px; border:1px solid #ddd;">
                 <h4 class="val-exp">Budget Uscite</h4>
                 <div style="display:flex; gap:5px; margin-bottom:10px;"><input type="text" id="new-cat-exp" placeholder="Nuova..."><button onclick="addCat('exp')">+</button></div>
                 <div id="edit-cats-exp"></div>
+            </div>
+            <div style="flex:1; min-width: 250px; background:white; padding:15px; border-radius:10px; border:1px solid #ddd;">
+                <h4>⚙️ Target Risparmio</h4>
+                <label style="font-size: 0.8rem;">Soglia Minima Tasso Risparmio (%):</label>
+                <input type="number" id="savings-threshold" value="20" onchange="render(); saveToCloud();" style="margin-top:5px;">
+                <p style="font-size: 0.7rem; color: #7f8c8d;">I valori sotto questa soglia saranno evidenziati in rosso nel riepilogo.</p>
             </div>
         </div>
         <h3>📝 Storico Movimenti</h3>
@@ -169,7 +177,7 @@
     const SCOPES = "https://www.googleapis.com/auth/drive.file";
     let tokenClient, gapiInited = false, gisInited = false, fileId = null;
     const months = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
-    let records = [], catsInc = [{n: "Stipendio", b: 2000}], catsExp = [{n: "Cibo", b: 400}, {n: "Casa", b: 600}];
+    let records = [], catsInc = [{n: "Stipendio", b: 2000}], catsExp = [{n: "Cibo", b: 400}, {n: "Casa", b: 600}], savingsThreshold = 20;
     let currentType = 'Entrata';
     let cMain, cForecast, cAvg, cAvgPie, cMInc, cMExp;
 
@@ -189,6 +197,8 @@
             records = res.result.records || []; 
             catsInc = (res.result.catsInc || catsInc).sort((a,b) => a.n.localeCompare(b.n)); 
             catsExp = (res.result.catsExp || catsExp).sort((a,b) => a.n.localeCompare(b.n));
+            savingsThreshold = res.result.savingsThreshold || 20;
+            document.getElementById('savings-threshold').value = savingsThreshold;
         } else { await saveToCloud(true); }
         document.getElementById('sync-status').innerText = "✅ Cloud Sincronizzato";
         render();
@@ -197,7 +207,8 @@
     async function saveToCloud(isNew = false) {
         catsInc.sort((a,b) => a.n.localeCompare(b.n));
         catsExp.sort((a,b) => a.n.localeCompare(b.n));
-        const content = JSON.stringify({records, catsInc, catsExp});
+        savingsThreshold = parseFloat(document.getElementById('savings-threshold').value) || 20;
+        const content = JSON.stringify({records, catsInc, catsExp, savingsThreshold});
         if (isNew) {
             const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=media', { method: 'POST', headers: { 'Authorization': 'Bearer ' + gapi.client.getToken().access_token, 'Content-Type': 'application/json' }, body: content });
             const json = await res.json(); fileId = json.id;
@@ -210,6 +221,7 @@
 
     function exportToExcel() {
         const selYear = document.getElementById('year-selector').value;
+        const today = new Date().toISOString().split('T')[0]; // Formato AAAA-MM-GG
         const data = records
             .filter(r => new Date(r.date).getFullYear().toString() === selYear)
             .sort((a,b) => new Date(b.date) - new Date(a.date) || b.id - a.id)
@@ -223,7 +235,7 @@
         const worksheet = XLSX.utils.json_to_sheet(data);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, `Movimenti ${selYear}`);
-        XLSX.writeFile(workbook, `Wallet_${selYear}.xlsx`);
+        XLSX.writeFile(workbook, `Wallet_${today}.xlsx`);
     }
 
     function importFromExcel(input) {
@@ -282,6 +294,7 @@
         const now = new Date();
         const curYear = now.getFullYear().toString();
         const curMonth = now.getMonth();
+        const threshold = parseFloat(document.getElementById('savings-threshold').value) || 20;
         
         let avgDivisor = 12;
         if (selYear === curYear) {
@@ -312,16 +325,19 @@
             return `<tr><td class="row-label">${lbl}</td>${data.map(v => `<td class="${cls}">${fEuro(v)}</td>`).join('')}<td style="font-weight:bold">${fEuro(tot)}</td><td class="col-avg">${fEuro(avg)}</td></tr>`;
         };
 
-        const savingsRateData = mStats.map(s => s.inc > 0 ? ((s.inc - s.exp) / s.inc * 100).toFixed(1) + '%' : '0%');
+        const savingsRateValues = mStats.map(s => s.inc > 0 ? ((s.inc - s.exp) / s.inc * 100) : 0);
         const totInc = mStats.reduce((a,b)=>a+b.inc, 0);
         const totExp = mStats.reduce((a,b)=>a+b.exp, 0);
-        const totSavingsRate = totInc > 0 ? ((totInc - totExp) / totInc * 100).toFixed(1) + '%' : '0%';
+        const totSavingsRate = totInc > 0 ? ((totInc - totExp) / totInc * 100) : 0;
+
+        const rateCells = savingsRateValues.map(v => `<td class="${v < threshold ? 'low-savings' : ''}">${v.toFixed(1)}%</td>`).join('');
+        const totRateCell = `<td style="font-weight:bold" class="${totSavingsRate < threshold ? 'low-savings' : ''}">${totSavingsRate.toFixed(1)}%</td>`;
 
         document.getElementById('b-sum').innerHTML = 
             buildRow('Entrate', mStats.map(s=>s.inc), 'val-inc') + 
             buildRow('Uscite', mStats.map(s=>s.exp), 'val-exp') + 
             buildRow('Risparmi', mStats.map(s=>s.inc-s.exp), '') +
-            `<tr><td class="row-label">Tasso Risparmio</td>${savingsRateData.map(v => `<td>${v}</td>`).join('')}<td style="font-weight:bold">${totSavingsRate}</td><td class="col-avg">${totSavingsRate}</td></tr>`;
+            `<tr><td class="row-label">Tasso Risparmio</td>${rateCells}${totRateCell}<td class="col-avg">${totSavingsRate.toFixed(1)}%</td></tr>`;
         
         const buildCatTable = (cats, type, bodyId) => {
             let html = '';
@@ -371,22 +387,17 @@
 
     function updateCharts(mStats, selM, yearRecords, avgDivisor) {
         const standardOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => fEuro(v) } } } };
-        
-        // Bar Chart (Monthly Savings)
         if(cMain) cMain.destroy();
         cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: standardOptions });
 
-        // Forecast Chart (Cumulative Savings)
         if(cForecast) cForecast.destroy();
         const monthlySavings = mStats.map(s => s.inc - s.exp);
         let cumulative = 0;
         const cumulativeReal = [];
         const cumulativeForecast = [];
-        
         const selYear = document.getElementById('year-selector').value;
         const now = new Date();
         const curMonth = (selYear === now.getFullYear().toString()) ? now.getMonth() : (parseInt(selYear) < now.getFullYear() ? 12 : -1);
-        
         const totalReal = monthlySavings.slice(0, curMonth + 1).reduce((a, b) => a + b, 0);
         const avgSavings = (curMonth >= 0) ? totalReal / (curMonth + 1) : 0;
 
@@ -396,15 +407,12 @@
                 cumulativeReal.push(cumulative);
                 cumulativeForecast.push(null);
             } else {
-                if (i === curMonth + 1 && i > 0) {
-                    cumulativeForecast[i-1] = cumulative; // Connect lines
-                }
+                if (i === curMonth + 1 && i > 0) cumulativeForecast[i-1] = cumulative;
                 cumulative += avgSavings;
                 cumulativeForecast.push(cumulative);
                 cumulativeReal.push(null);
             }
         }
-
         cForecast = new Chart(document.getElementById('forecastChart'), {
             type: 'line',
             data: {
@@ -424,32 +432,8 @@
         if(cAvgPie) cAvgPie.destroy();
         cAvgPie = new Chart(document.getElementById('avgExpPieChart'), { 
             type: 'pie', 
-            data: { 
-                labels: avgData.map(d=>d.n), 
-                datasets: [{ 
-                    data: avgData.map(d=>d.v), 
-                    backgroundColor: ['#e74c3c', '#3498db', '#27ae60', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c'] 
-                }] 
-            }, 
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                plugins: { 
-                    legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.label || '';
-                                if (label) label += ': ';
-                                let sum = context.dataset.data.reduce((a, b) => a + b, 0);
-                                let value = context.raw;
-                                let percentage = sum > 0 ? ((value / sum) * 100).toFixed(1) + '%' : '0%';
-                                return label + fEuro(value) + ' (' + percentage + ')';
-                            }
-                        }
-                    }
-                } 
-            } 
+            data: { labels: avgData.map(d=>d.n), datasets: [{ data: avgData.map(d=>d.v), backgroundColor: ['#e74c3c', '#3498db', '#27ae60', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c'] }] }, 
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }, tooltip: { callbacks: { label: function(context) { let sum = context.dataset.data.reduce((a, b) => a + b, 0); return (context.label || '') + ': ' + fEuro(context.raw) + ' (' + (sum > 0 ? ((context.raw / sum) * 100).toFixed(1) + '%' : '0%') + ')'; } } } } } 
         });
 
         const realInc = yearRecords.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === selM).reduce((s,r)=>s+r.amount, 0);
