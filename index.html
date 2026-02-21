@@ -58,8 +58,8 @@
         .val-exp { color: var(--danger); font-weight: bold; }
         .low-savings { color: var(--danger); font-weight: bold; background: #fff5f5; }
         
-        /* FIX GRAFICI */
-        .chart-box { min-height: 300px; width: 100%; position: relative; background: white; border-radius: 10px; padding: 10px 10px 40px 10px; margin-bottom: 15px; border: 1px solid #eee; box-sizing: border-box; }
+        /* FIX ALTEZZA GRAFICI */
+        .chart-box { height: 300px; width: 100%; position: relative; background: white; border-radius: 10px; padding: 10px 10px 35px 10px; margin-bottom: 15px; border: 1px solid #eee; box-sizing: border-box; }
         .chart-box canvas { width: 100% !important; height: 100% !important; }
 
         .cat-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; background: #f9f9f9; padding: 8px; border-radius: 5px; border: 1px solid #eee; }
@@ -70,8 +70,8 @@
         .btn-x { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; padding: 0px; line-height: 1; }
         .btn-edit { background: none; border: none; color: var(--info); cursor: pointer; font-size: 1rem; padding: 0px 8px; line-height: 1; }
         .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .chart-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: nowrap; } /* No-wrap per forzare affiancamento su desktop */
-        .chart-row .chart-box { flex: 1; }
+        .chart-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+        .chart-row .chart-box { flex: 1; min-width: 300px; }
         .dark-mode-toggle { cursor: pointer; border: none; background: none; font-size: 1.2rem; margin-left: 10px; }
     </style>
 </head>
@@ -413,11 +413,11 @@
     }
 
     function updateCharts(mStats, selM, yearRecords, avgDivisor) {
-        // Opzioni grafici con fix padding inferiore per i mesi
+        // Opzioni con altezza fissa rispettata
         const standardOptions = { 
             responsive: true, 
             maintainAspectRatio: false, 
-            layout: { padding: { bottom: 10 } },
+            layout: { padding: { bottom: 5 } },
             plugins: { legend: { display: false } }, 
             scales: { 
                 y: { beginAtZero: true, ticks: { callback: v => fEuro(v) } },
