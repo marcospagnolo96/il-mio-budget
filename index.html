@@ -56,7 +56,7 @@
         table th, table td { border: 1px solid var(--border-color); padding: 8px; text-align: center; }
         .no-lines td, .no-lines th { border: none !important; padding: 2px 8px !important; }
         .bold-cat { font-weight: bold; text-align: left !important; }
-        .table-annual { font-size: 0.7rem; table-layout: fixed; }
+        .table-annual { font-size: 0.7rem; table-layout: fixed; min-width: 800px; }
         .row-label { text-align: left !important; font-weight: bold; width: 110px; background: #fdfdfd; position: sticky; left: 0; }
         .col-avg { background: #f0f7ff; font-weight: bold; color: var(--info); }
         .val-inc { color: var(--success); font-weight: bold; }
@@ -78,6 +78,19 @@
         .chart-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
         .chart-row .chart-box { flex: 1; min-width: 300px; }
         .dark-mode-toggle { cursor: pointer; border: none; background: none; font-size: 1.2rem; }
+
+        /* --- STILE SPECIFICO PER TELEFONO --- */
+        @media (max-width: 768px) {
+            .sidebar { padding: 10px 15px; gap: 10px; justify-content: space-between; }
+            .main-content { padding: 15px 15px; height: calc(100vh - 120px); }
+            .sidebar h2 { font-size: 1rem; }
+            .nav-btn { padding: 6px 10px; font-size: 0.7rem; flex: 1; }
+            .excel-actions { width: 100%; justify-content: center; }
+            #sync-status { width: 100%; text-align: center; order: 10; margin-top: 5px; }
+            .chart-row .chart-box { min-width: 100%; }
+            .table-annual { font-size: 0.65rem; }
+            .row-label { width: 80px; }
+        }
     </style>
 </head>
 <body>
