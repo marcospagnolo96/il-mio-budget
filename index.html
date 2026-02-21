@@ -257,25 +257,22 @@
             let r = records[i];
             if (r.recurring && r.date <= nowStr) {
                 r.recurring = false;
-                const oldDate = new Date(r.date);
-                const currentDay = oldDate.getDate();
-                let nextYear = oldDate.getFullYear();
-                let nextMonth = oldDate.getMonth() + 1;
                 
-                if (nextMonth > 11) {
-                    nextMonth = 0;
-                    nextYear++;
-                }
-
-                let nextDateObj = new Date(nextYear, nextMonth, 1);
-                const lastDayOfNextMonth = new Date(nextYear, nextMonth + 1, 0).getDate();
-                const targetDay = Math.min(currentDay, lastDayOfNextMonth);
-                nextDateObj.setDate(targetDay);
+                // --- LOGICA CORRETTA PER IL GIORNO SUCCESSIVO ---
+                const d = new Date(r.date);
+                const originalDay = d.getDate();
+                // Portiamoci al primo giorno del mese successivo per evitare sbalzi
+                d.setMonth(d.getMonth() + 1, 1);
+                // Troviamo l'ultimo giorno del nuovo mese
+                const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+                // Impostiamo il giorno originale o l'ultimo disponibile
+                d.setDate(Math.min(originalDay, lastDay));
+                // ------------------------------------------------
 
                 records.push({
                     id: Date.now() + Math.random(),
                     type: r.type,
-                    date: nextDateObj.toISOString().split('T')[0],
+                    date: d.toISOString().split('T')[0],
                     desc: r.desc,
                     category: r.category,
                     amount: r.amount,
