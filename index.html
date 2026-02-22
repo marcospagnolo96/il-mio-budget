@@ -9,141 +9,171 @@
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
     <style>
-        /* --- STILI BASE E DESKTOP (INVARIATI) --- */
+        /* --- ROOT E VARIABILI --- */
         :root { --primary: #2c3e50; --success: #27ae60; --danger: #e74c3c; --info: #3498db; --bg: #f8f9fa; --card-bg: white; --text-main: #2c3e50; --border-color: #ddd; --rec-bg: #f0f7ff; --rec-border: #3498db; }
         
         body.dark-theme { --primary: #3498db; --bg: #1a1a1a; --card-bg: #2d2d2d; --text-main: #e0e0e0; --border-color: #444; --rec-bg: #1e2a3a; --rec-border: #3498db; }
-        
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; display: block; height: 100vh; overflow: hidden; font-size: 14px; }
+        body.dark-theme .sidebar { background: #252525; border-bottom-color: #444; }
+        body.dark-theme .nav-btn { background: #333; color: #eee; }
+        body.dark-theme .table-container, body.dark-theme .form-box, body.dark-theme .chart-box { background: var(--card-bg); border-color: #444; }
+        body.dark-theme input, body.dark-theme select { background: #333; color: white; border-color: #555; }
+        body.dark-theme .row-label { background: #2d2d2d; }
+        body.dark-theme .col-avg { background: #1e2a3a; }
+        body.dark-theme .btn-save { background: var(--primary); color: white; }
+        body.dark-theme #year-selector { color: white !important; background-color: #252525 !important; }
+
+        /* --- LAYOUT GENERALE DESKTOP --- */
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; display: block; height: 100vh; overflow: hidden; }
         
         .sidebar { width: 100%; background: white; padding: 10px 40px; border-bottom: 1px solid var(--border-color); display: flex; flex-direction: row; align-items: center; gap: 25px; box-sizing: border-box; flex-wrap: wrap; z-index: 100; }
-        .sidebar h2 { margin: 0; font-size: 1.1rem; }
-        
-        .nav-btn { padding: 8px 15px; border: none; background: #eee; cursor: pointer; font-weight: bold; border-radius: 6px; font-size: 0.8rem; }
+        .sidebar h2 { margin: 0; font-size: 1.1rem; flex-shrink: 0; }
+        .nav-btn { padding: 8px 15px; border: none; background: #eee; text-align: center; cursor: pointer; font-weight: bold; border-radius: 6px; font-size: 0.8rem; white-space: nowrap; }
         .nav-btn.active { background: #2c3e50; color: white; }
-        body.dark-theme .nav-btn { background: #333; color: #eee; }
-        body.dark-theme .nav-btn.active { background: var(--primary); }
-
+        
+        .excel-actions { display: flex; gap: 5px; align-items: center; }
+        .btn-excel { padding: 8px 12px; background: #1d6f42; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.7rem; }
+        .btn-import { background: #3498db; }
+        
         .main-content { height: calc(100vh - 70px); padding: 20px 40px; overflow-y: auto; box-sizing: border-box; max-width: 1400px; margin: 0 auto; }
         .page { display: none; }
         .page.active { display: block; }
-
+        
+        /* --- FORM ORIZZONTALE DESKTOP --- */
+        .form-box { background: #fdfdfd; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 8px; }
+        .horizontal-form { display: flex; flex-wrap: nowrap; gap: 10px; align-items: flex-end; }
+        .horizontal-form .input-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 120px; }
+        .horizontal-form label { font-size: 0.7rem; color: #7f8c8d; }
+        
+        input, select, .btn-save { width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; font-size: 0.8rem; }
+        .btn-save { background: var(--primary); color: white; font-weight: bold; cursor: pointer; border: none; height: 32px; }
+        
+        /* --- TABELLE --- */
         .table-container { background: white; padding: 10px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         table th, table td { border: 1px solid var(--border-color); padding: 8px; text-align: center; }
-        
+        .table-annual { font-size: 0.7rem; table-layout: fixed; min-width: 900px; }
         .row-label { text-align: left !important; font-weight: bold; width: 110px; background: #fdfdfd; position: sticky; left: 0; z-index: 5; }
-        body.dark-theme .row-label { background: #2d2d2d; }
-
-        /* FORM ORIZZONTALE DESKTOP */
-        .form-box { background: #fdfdfd; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
-        .horizontal-form { display: flex; flex-wrap: nowrap; gap: 10px; align-items: flex-end; }
-        .input-group { display: flex; flex-direction: column; gap: 4px; flex: 1; }
-        .input-group label { font-size: 0.7rem; color: #7f8c8d; }
+        .col-avg { background: #f0f7ff; font-weight: bold; color: var(--info); }
         
-        input, select { padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 0.8rem; width: 100%; box-sizing: border-box; }
-        .btn-save { background: var(--primary); color: white; font-weight: bold; cursor: pointer; border: none; padding: 8px 15px; border-radius: 4px; }
+        /* --- GRAFICI --- */
+        .chart-box { height: 300px; width: 100%; background: white; border-radius: 10px; padding: 10px; margin-bottom: 15px; border: 1px solid #eee; box-sizing: border-box; }
+        .chart-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+        .chart-row .chart-box { flex: 1; min-width: 300px; }
 
-        .chart-row { display: flex; gap: 15px; margin-bottom: 15px; }
-        .chart-box { flex: 1; height: 300px; background: white; border-radius: 10px; padding: 10px; border: 1px solid #eee; }
-
-        /* --- STILI SOLO PER MOBILE (@MEDIA) --- */
-        @media (max-width: 768px) {
-            body { overflow-y: auto; font-size: 16px; }
-            .sidebar { padding: 15px 10px; gap: 10px; flex-direction: column; height: auto; }
-            .sidebar h2 { font-size: 1.5rem; }
-            .nav-btn { padding: 15px 5px; font-size: 0.9rem; flex: 1; width: 100%; }
-            
-            .main-content { height: auto; padding: 15px 10px; overflow: visible; }
-            
-            /* Trasforma form orizzontale in verticale su mobile */
-            .horizontal-form { flex-direction: column; flex-wrap: wrap; }
-            .input-group { width: 100%; }
-            .input-group label { font-size: 1rem; font-weight: bold; }
-            input, select, .btn-save, .type-btn { padding: 15px !important; font-size: 1.1rem !important; height: auto !important; }
-            
-            /* Ingrandisce scritte tabelle e forza scroll */
-            .table-annual { min-width: 1200px; font-size: 1rem; }
-            .row-label { width: 140px; font-size: 1rem; padding: 15px 10px; }
-            table th, table td { padding: 15px 10px; font-size: 1rem; }
-            
-            /* Grafici più grandi e incolonnati */
-            .chart-row { flex-direction: column; }
-            .chart-box { height: 350px; }
-
-            /* Vista mensile verticale */
-            #monthly-flex { flex-direction: column !important; }
-            
-            /* Target risparmio sotto su mobile */
-            #settings-flex { flex-direction: column !important; }
-        }
-
-        .val-inc { color: var(--success); font-weight: bold; }
-        .val-exp { color: var(--danger); font-weight: bold; }
         .type-selector { display: flex; gap: 5px; }
         .type-btn { flex: 1; padding: 6px; border: 2px solid #ddd; background: white; cursor: pointer; font-weight: bold; border-radius: 6px; font-size: 0.7rem; }
         .type-btn.inc-active { border-color: var(--success); color: var(--success); background: #eafaf1; }
         .type-btn.exp-active { border-color: var(--danger); color: var(--danger); background: #fdf2f2; }
-        
+        .val-inc { color: var(--success); font-weight: bold; }
+        .val-exp { color: var(--danger); font-weight: bold; }
+
         .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+        /* ------------------------------------------------ */
+        /* CSS MOBILE (OVERRIDE SOLO PER SMARTPHONE) */
+        /* ------------------------------------------------ */
+        @media (max-width: 768px) {
+            body { overflow-y: auto; }
+            .sidebar { padding: 15px 10px; flex-direction: column; height: auto; gap: 15px; }
+            .sidebar h2 { font-size: 1.5rem; }
+            .nav-btn { padding: 15px; font-size: 1rem; flex: 1; width: 100%; }
+            .excel-actions { width: 100%; justify-content: center; gap: 10px; }
+            .btn-excel { padding: 15px; font-size: 0.9rem; flex: 1; }
+            
+            .main-content { height: auto; padding: 15px 10px; overflow: visible; }
+            
+            /* Form diventa verticale */
+            .horizontal-form { flex-direction: column; flex-wrap: wrap; align-items: stretch; gap: 15px; }
+            .horizontal-form .input-group { width: 100%; }
+            .horizontal-form label { font-size: 1.1rem; font-weight: bold; }
+            input, select, .btn-save, .type-btn { padding: 18px !important; font-size: 1.1rem !important; height: auto !important; }
+            
+            /* Tabelle mobile: testo grande e scroll */
+            .table-annual { min-width: 1300px; font-size: 1rem; }
+            .row-label { width: 150px; font-size: 1rem; padding: 15px 10px; }
+            table th, table td { padding: 15px 10px; font-size: 1rem; }
+            
+            /* Grafici */
+            .chart-row { flex-direction: column; }
+            .chart-box { height: 400px; }
+
+            /* Vista mensile verticale */
+            #monthly-container { flex-direction: column !important; }
+            #settings-row { flex-direction: column !important; }
+        }
     </style>
 </head>
 <body>
 
 <div id="auth-screen" class="auth-overlay">
-    <h1>💰 Wallet Cloud</h1>
-    <button style="padding: 15px 40px; font-size: 1.1rem; cursor: pointer; background: var(--info); color: white; border: none; border-radius: 50px; font-weight: bold;" onclick="handleAuthClick()">ACCEDI CON GOOGLE</button>
+    <h1 style="color: var(--primary)">💰 Wallet Cloud</h1>
+    <button style="padding: 20px 50px; font-size: 1.3rem; cursor: pointer; background: var(--info); color: white; border: none; border-radius: 50px; font-weight: bold;" onclick="handleAuthClick()">ACCEDI CON GOOGLE</button>
 </div>
 
 <header class="sidebar">
     <div style="display:flex; align-items: center; gap: 10px;">
-        <h2>📊 Wallet</h2>
-        <button onclick="toggleDarkMode()" style="background:none; border:none; cursor:pointer; font-size:1.2rem;">🌓</button>
+        <h2>📊 Wallet 2026</h2>
+        <button class="dark-mode-toggle" onclick="toggleDarkMode()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">🌓</button>
     </div>
-    <select id="year-selector" onchange="render()" style="width: auto; font-weight: bold; border:none; background:transparent; font-size: 1rem;"></select>
+    <select id="year-selector" onchange="render()" style="width: auto; font-size: 1.2rem; font-weight: bold; border:none; background:transparent; cursor:pointer;"></select>
     <nav style="display: flex; gap: 8px;">
-        <button class="nav-btn active" onclick="showPage('dashboard', this)">Dashboard</button>
-        <button class="nav-btn" onclick="showPage('monthly', this)">Mensile</button>
-        <button class="nav-btn" onclick="showPage('history', this)">Impostazioni</button>
+        <button class="nav-btn active" onclick="showPage('dashboard', this)">ANNUALE</button>
+        <button class="nav-btn" onclick="showPage('monthly', this)">MENSILE</button>
+        <button class="nav-btn" onclick="showPage('history', this)">IMPOSTAZIONI</button>
     </nav>
-    <div class="excel-actions" style="display:flex; gap:5px;">
-        <button class="btn-save" style="background:#1d6f42;" onclick="exportToExcel()">ESPORTA</button>
-        <button class="btn-save" style="background:#3498db;" onclick="document.getElementById('import-input').click()">IMPORTA</button>
+    <div class="excel-actions">
+        <button class="btn-excel" onclick="exportToExcel()">ESPORTA</button>
+        <button class="btn-excel btn-import" onclick="document.getElementById('import-input').click()">IMPORTA</button>
     </div>
-    <div id="sync-status">Cloud Pronto</div>
+    <div id="sync-status" style="font-size: 0.7rem; color: #7f8c8d; margin-left: auto;">Sincronizzazione...</div>
 </header>
 
 <main class="main-content">
     <div id="dashboard" class="page active">
+        <h3>Analisi Annuale</h3>
         <div class="chart-row">
-            <div class="chart-box"><h4>Risparmio Mensile</h4><canvas id="mainChart"></canvas></div>
-            <div class="chart-box"><h4>Proiezione</h4><canvas id="forecastChart"></canvas></div>
+            <div class="chart-box"><canvas id="mainChart"></canvas></div>
+            <div class="chart-box"><canvas id="forecastChart"></canvas></div>
         </div>
-        <div class="table-container"><table class="table-annual"><thead><tr id="h-sum"></tr></thead><tbody id="b-sum"></tbody></table></div>
-        <div class="table-container"><h4>Entrate</h4><table class="table-annual"><thead><tr id="h-inc"></tr></thead><tbody id="b-inc"></tbody></table></div>
-        <div class="table-container"><h4>Uscite</h4><table class="table-annual"><thead><tr id="h-exp"></tr></thead><tbody id="b-exp"></tbody></table></div>
+        <div class="table-container">
+            <table class="table-annual"><thead><tr id="h-sum"></tr></thead><tbody id="b-sum"></tbody></table>
+        </div>
+        <h3>Entrate per Categoria</h3>
+        <div class="table-container">
+            <table class="table-annual"><thead><tr id="h-inc"></tr></thead><tbody id="b-inc"></tbody></table>
+        </div>
+        <h3>Uscite per Categoria</h3>
+        <div class="table-container">
+            <table class="table-annual"><thead><tr id="h-exp"></tr></thead><tbody id="b-exp"></tbody></table>
+        </div>
+        <div class="chart-row">
+            <div class="chart-box"><canvas id="avgExpChart"></canvas></div>
+            <div class="chart-box"><canvas id="avgExpPieChart"></canvas></div>
+        </div>
     </div>
 
     <div id="monthly" class="page">
-        <h3>Dettaglio Mese: <select id="month-filter" onchange="render()" style="width:150px"></select></h3>
-        <div id="monthly-flex" style="display: flex; gap: 20px;">
+        <h3>Dettaglio Mese: <select id="month-filter" onchange="render()" style="width:200px; font-size: 1.1rem;"></select></h3>
+        <div id="monthly-container" style="display: flex; gap: 20px;">
             <div style="flex:1;">
                 <h4 class="val-inc">Entrate</h4>
-                <div class="table-container"><table><thead><tr><th>Categoria</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-inc-body"></tbody></table></div>
+                <div class="chart-box"><canvas id="mChartInc"></canvas></div>
+                <div class="table-container"><table><thead><tr><th style="text-align:left">Cat</th><th>Budget</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-inc-body"></tbody></table></div>
             </div>
             <div style="flex:1;">
                 <h4 class="val-exp">Uscite</h4>
-                <div class="table-container"><table><thead><tr><th>Categoria</th><th>Prev</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-exp-body"></tbody></table></div>
+                <div class="chart-box"><canvas id="mChartExp"></canvas></div>
+                <div class="table-container"><table><thead><tr><th style="text-align:left">Cat</th><th>Budget</th><th>Reale</th><th>Diff</th></tr></thead><tbody id="m-exp-body"></tbody></table></div>
             </div>
         </div>
     </div>
 
     <div id="history" class="page">
-        <div id="settings-flex" style="display: flex; gap: 20px; margin-bottom: 20px;">
+        <div id="settings-row" style="display: flex; gap: 20px; margin-bottom: 20px;">
             <div class="form-box" style="flex: 3;">
                 <h4 id="form-title">Nuovo Movimento</h4>
                 <div class="horizontal-form">
-                    <div class="input-group" style="min-width:130px">
+                    <div class="input-group" style="min-width:140px">
                         <label>Tipo</label>
                         <div class="type-selector">
                             <button id="btn-inc" class="type-btn inc-active" onclick="setType('Entrata')">Entrata</button>
@@ -151,37 +181,44 @@
                         </div>
                     </div>
                     <div class="input-group"><label>Data</label><input type="date" id="date"></div>
-                    <div class="input-group"><label>Descrizione</label><input type="text" id="desc"></div>
+                    <div class="input-group"><label>Descrizione</label><input type="text" id="desc" placeholder="Cosa..."></div>
                     <div class="input-group"><label>Categoria</label><select id="cat-select"></select></div>
-                    <div class="input-group" style="max-width:100px"><label>Importo</label><input type="number" id="amount" step="0.01"></div>
-                    <div class="input-group" style="max-width:60px; align-items:center"><label>Ricorr.</label><input type="checkbox" id="is-recurring" style="width:20px; height:20px"></div>
-                    <input type="hidden" id="edit-id">
+                    <div class="input-group" style="max-width:110px"><label>Importo €</label><input type="number" id="amount" step="0.01"></div>
+                    <div class="input-group" style="max-width:70px; align-items:center"><label>Ricorr.</label><input type="checkbox" id="is-recurring" style="width:25px; height:25px"></div>
+                    <input type="hidden" id="edit-id" value="">
                     <button class="btn-save" onclick="addRecord()">SALVA</button>
                 </div>
             </div>
             <div class="form-box" style="flex: 1;">
                 <h4>Target Risparmio %</h4>
-                <input type="number" id="savings-threshold" value="20" onchange="render(); saveToCloud();">
+                <input type="number" id="savings-threshold" value="20" onchange="render(); saveToCloud();" style="font-size: 1.2rem; padding: 10px;">
             </div>
         </div>
-        
+
         <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-            <div class="form-box" style="flex:1; min-width: 250px;">
-                <h4 class="val-inc">Budget Entrate</h4>
-                <div style="display:flex; gap:5px; margin-bottom:10px;"><input type="text" id="new-cat-inc"><button onclick="addCat('inc')">+</button></div>
+            <div class="form-box" style="flex:1; min-width: 280px;">
+                <h4 class="val-inc">Categorie Entrate</h4>
+                <div style="display:flex; gap:5px; margin-bottom:15px;"><input type="text" id="new-cat-inc"><button onclick="addCat('inc')" style="width:50px">+</button></div>
                 <div id="edit-cats-inc"></div>
             </div>
-            <div class="form-box" style="flex:1; min-width: 250px;">
-                <h4 class="val-exp">Budget Uscite</h4>
-                <div style="display:flex; gap:5px; margin-bottom:10px;"><input type="text" id="new-cat-exp"><button onclick="addCat('exp')">+</button></div>
+            <div class="form-box" style="flex:1; min-width: 280px;">
+                <h4 class="val-exp">Categorie Uscite</h4>
+                <div style="display:flex; gap:5px; margin-bottom:15px;"><input type="text" id="new-cat-exp"><button onclick="addCat('exp')" style="width:50px">+</button></div>
                 <div id="edit-cats-exp"></div>
             </div>
         </div>
 
-        <h3>Storico</h3>
+        <h3>Storico Movimenti</h3>
         <div class="table-container">
-            <input type="text" id="f-search" placeholder="Cerca..." oninput="render()" style="margin-bottom:10px; padding:10px; width:100%; box-sizing:border-box;">
-            <table><thead><tr><th>Data</th><th>Descrizione</th><th>Categoria</th><th>Tipo</th><th>Euro</th><th>Azioni</th></tr></thead><tbody id="history-body"></tbody></table>
+            <div style="margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap;">
+                <input type="text" id="f-search" placeholder="Cerca..." oninput="render()" style="flex:1; padding:10px;">
+                <select id="f-month" onchange="render()" style="width:150px;"><option value="">Mese...</option></select>
+            </div>
+            <table><thead><tr><th>Data</th><th>Descrizione</th><th>Categoria</th><th>Tipo</th><th>Importo</th><th>Azioni</th></tr></thead><tbody id="history-body"></tbody></table>
+        </div>
+        <h3>Movimenti Ricorrenti</h3>
+        <div class="table-container" style="background:var(--rec-bg); border:1px solid var(--rec-border);">
+            <table><thead><tr><th>Data Prossima</th><th>Descrizione</th><th>Tipo</th><th>Importo</th><th>Azioni</th></tr></thead><tbody id="recurring-list-body"></tbody></table>
         </div>
     </div>
 </main>
@@ -189,11 +226,12 @@
 <input type="file" id="import-input" style="display:none" accept=".xlsx, .xls" onchange="importFromExcel(this)">
 
 <script>
+    /* --- LOGICA INTEGRALE GOOGLE DRIVE E JS --- */
     const CLIENT_ID = '748854814089-olhm7pebtjdn7beu9j5jt7n8hfj8pih2.apps.googleusercontent.com';
     const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest";
     const SCOPES = "https://www.googleapis.com/auth/drive.file";
     let tokenClient, fileId = null, records = [], catsInc = [{n: "Stipendio", b: 2000}], catsExp = [{n: "Cibo", b: 400}], savingsThreshold = 20;
-    let currentType = 'Entrata', cMain, cForecast;
+    let currentType = 'Entrata', cMain, cForecast, cAvg, cAvgPie, cMInc, cMExp;
     const months = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
 
     function fEuro(v) { return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(v); }
@@ -209,11 +247,29 @@
         if (response.result.files.length > 0) {
             fileId = response.result.files[0].id;
             const res = await gapi.client.drive.files.get({ fileId: fileId, alt: 'media' });
-            records = res.result.records || []; catsInc = res.result.catsInc || catsInc; catsExp = res.result.catsExp || catsExp;
+            records = res.result.records || []; 
+            catsInc = (res.result.catsInc || catsInc).sort((a,b) => a.n.localeCompare(b.n)); 
+            catsExp = (res.result.catsExp || catsExp).sort((a,b) => a.n.localeCompare(b.n));
             savingsThreshold = res.result.savingsThreshold || 20;
             document.getElementById('savings-threshold').value = savingsThreshold;
         } else { await saveToCloud(true); }
+        document.getElementById('sync-status').innerText = "✅ Cloud Connesso";
+        await checkRecurringMoves();
         render();
+    }
+
+    async function checkRecurringMoves() {
+        const nowStr = new Date().toISOString().split('T')[0];
+        let changed = false;
+        records.forEach(r => {
+            if (r.recurring && r.date <= nowStr) {
+                r.recurring = false;
+                const d = new Date(r.date); d.setMonth(d.getMonth() + 1);
+                records.push({ id: Date.now()+Math.random(), type: r.type, date: d.toISOString().split('T')[0], desc: r.desc, category: r.category, amount: r.amount, recurring: true });
+                changed = true;
+            }
+        });
+        if (changed) { await saveToCloud(); }
     }
 
     async function saveToCloud(isNew = false) {
@@ -225,6 +281,7 @@
         } else {
             await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + gapi.client.getToken().access_token, 'Content-Type': 'application/json' }, body: content });
         }
+        document.getElementById('sync-status').innerText = "✅ Salvato";
     }
 
     function showPage(id, btn) {
@@ -239,18 +296,21 @@
         const selYear = document.getElementById('year-selector').value;
         const selM = parseInt(document.getElementById('month-filter').value);
         const yearRecords = records.filter(r => !r.recurring && new Date(r.date).getFullYear().toString() === selYear);
-        const avgDivisor = (selYear === "2026") ? (new Date().getMonth() + 1) : 12;
+        const avgDivisor = (selYear === "2026" && new Date().getFullYear() == 2026) ? (new Date().getMonth() + 1) : 12;
 
         let mStats = months.map((_, i) => ({
             inc: yearRecords.filter(r => r.type === 'Entrata' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0),
             exp: yearRecords.filter(r => r.type === 'Uscita' && new Date(r.date).getMonth() === i).reduce((s,r)=>s+r.amount, 0)
         }));
 
-        const buildRow = (lbl, data, cls) => `<tr><td class="row-label">${lbl}</td>${data.map(v => `<td class="${cls}">${fEuro(v)}</td>`).join('')}<td>${fEuro(data.reduce((a,b)=>a+b,0))}</td><td style="background:#f0f7ff">${fEuro(data.reduce((a,b)=>a+b,0)/avgDivisor)}</td></tr>`;
-        const hHTML = '<th>Cat</th>' + months.map(m => `<th>${m.substring(0,3)}</th>`).join('') + '<th>TOT</th><th>MED</th>';
-        
+        const buildRow = (lbl, data, cls) => {
+            const tot = data.reduce((a,b)=>a+b,0);
+            return `<tr><td class="row-label">${lbl}</td>${data.map(v => `<td class="${cls}">${fEuro(v)}</td>`).join('')}<td>${fEuro(tot)}</td><td class="col-avg">${fEuro(tot/avgDivisor)}</td></tr>`;
+        };
+
+        const hHTML = '<th>Categoria</th>' + months.map(m => `<th>${m.substring(0,3)}</th>`).join('') + '<th>TOT</th><th>MED</th>';
         document.getElementById('h-sum').innerHTML = hHTML;
-        document.getElementById('b-sum').innerHTML = buildRow('In', mStats.map(s=>s.inc), 'val-inc') + buildRow('Out', mStats.map(s=>s.exp), 'val-exp');
+        document.getElementById('b-sum').innerHTML = buildRow('Entrate', mStats.map(s=>s.inc), 'val-inc') + buildRow('Uscite', mStats.map(s=>s.exp), 'val-exp') + buildRow('Risparmio', mStats.map(s=>s.inc-s.exp), '');
 
         const buildCatTable = (cats, type, bodyId, hId) => {
             document.getElementById(hId).innerHTML = hHTML;
@@ -266,7 +326,7 @@
         const renderMonthDetail = (cats, type, bodyId, selMonth) => {
             document.getElementById(bodyId).innerHTML = cats.map(c => {
                 const real = yearRecords.filter(r => r.type === type && r.category === c.n && new Date(r.date).getMonth() === selMonth).reduce((s,r)=>s+r.amount,0);
-                return `<tr><td align="left"><b>${c.n}</b></td><td>${fEuro(c.b)}</td><td class="${type==='Entrata'?'val-inc':'val-exp'}">${fEuro(real)}</td><td>${fEuro(real-c.b)}</td></tr>`;
+                return `<tr><td style="text-align:left"><b>${c.n}</b></td><td>${fEuro(c.b)}</td><td class="${type==='Entrata'?'val-inc':'val-exp'}">${fEuro(real)}</td><td>${fEuro(real-c.b)}</td></tr>`;
             }).join('');
         };
         renderMonthDetail(catsInc, 'Entrata', 'm-inc-body', selM);
@@ -274,19 +334,20 @@
 
         // Storico
         const fS = document.getElementById('f-search').value.toLowerCase();
-        const filtered = yearRecords.filter(r => r.desc.toLowerCase().includes(fS)).sort((a,b) => new Date(b.date) - new Date(a.date));
-        document.getElementById('history-body').innerHTML = filtered.map(r => `<tr><td>${r.date}</td><td>${r.desc}</td><td>${r.category}</td><td>${r.type}</td><td>${fEuro(r.amount)}</td><td><button onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
+        const fM = document.getElementById('f-month').value;
+        const filtered = yearRecords.filter(r => r.desc.toLowerCase().includes(fS) && (fM==="" || new Date(r.date).getMonth()==fM)).sort((a,b) => new Date(b.date) - new Date(a.date));
+        document.getElementById('history-body').innerHTML = filtered.map(r => `<tr><td>${r.date}</td><td>${r.desc}</td><td>${r.category}</td><td class="${r.type==='Entrata'?'val-inc':'val-exp'}">${r.type}</td><td>${fEuro(r.amount)}</td><td><button onclick="editRecord(${r.id})">✎</button><button onclick="delRecord(${r.id})">✕</button></td></tr>`).join('');
+        document.getElementById('recurring-list-body').innerHTML = records.filter(r=>r.recurring).map(r => `<tr><td>${r.date}</td><td>${r.desc}</td><td>${r.type}</td><td>${fEuro(r.amount)}</td><td><button onclick="records=records.filter(x=>x.id!=${r.id});render();saveToCloud();">✕</button></td></tr>`).join('');
 
-        updateCharts(mStats, avgDivisor);
-        
+        updateCharts(mStats, selM, yearRecords, avgDivisor);
+        rendCatEdit();
         document.getElementById('cat-select').innerHTML = (currentType === 'Entrata' ? catsInc : catsExp).map(c => `<option value="${c.n}">${c.n}</option>`).join('');
-        document.getElementById('edit-cats-inc').innerHTML = catsInc.map((c,i)=>`<div>${c.n} <input type="number" value="${c.b}" onchange="catsInc[${i}].b=parseFloat(this.value);saveToCloud();"></div>`).join('');
-        document.getElementById('edit-cats-exp').innerHTML = catsExp.map((c,i)=>`<div>${c.n} <input type="number" value="${c.b}" onchange="catsExp[${i}].b=parseFloat(this.value);saveToCloud();"></div>`).join('');
     }
 
-    function updateCharts(mStats, avgDivisor) {
+    function updateCharts(mStats, selM, yearRecords, avgDivisor) {
         if(cMain) cMain.destroy();
-        cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: { responsive:true, maintainAspectRatio:false } });
+        cMain = new Chart(document.getElementById('mainChart'), { type: 'bar', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{ label:'Risparmio', data: mStats.map(s=>s.inc-s.exp), backgroundColor: mStats.map(s=>(s.inc-s.exp)>=0?'#27ae60':'#e74c3c') }] }, options: { responsive:true, maintainAspectRatio:false } });
+        
         if(cForecast) cForecast.destroy();
         let cumulative = 0; let real = []; let forecast = [];
         const avgS = mStats.slice(0, avgDivisor).reduce((a,b)=>a+(b.inc-b.exp),0) / avgDivisor;
@@ -294,21 +355,80 @@
             if(i < avgDivisor) { cumulative += (mStats[i].inc - mStats[i].exp); real.push(cumulative); forecast.push(null); }
             else { if(i===avgDivisor) forecast[i-1] = cumulative; cumulative += avgS; forecast.push(cumulative); real.push(null); }
         }
-        cForecast = new Chart(document.getElementById('forecastChart'), { type: 'line', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{label:'Reale', data:real, borderColor:'#3498db'}, {label:'Prev', data:forecast, borderColor:'#95a5a6', borderDash:[5,5]}] }, options: { responsive:true, maintainAspectRatio:false } });
+        cForecast = new Chart(document.getElementById('forecastChart'), { type: 'line', data: { labels: months.map(m=>m.substring(0,3)), datasets: [{label:'Reale', data:real, borderColor:'#3498db'}, {label:'Proiezione', data:forecast, borderColor:'#95a5a6', borderDash:[5,5]}] }, options: { responsive:true, maintainAspectRatio:false } });
+
+        const avgExpData = catsExp.map(c => ({n:c.n, v: yearRecords.filter(r=>r.type==='Uscita' && r.category===c.n).reduce((s,r)=>s+r.amount,0)/avgDivisor}));
+        if(cAvg) cAvg.destroy();
+        cAvg = new Chart(document.getElementById('avgExpChart'), { type: 'bar', data: { labels: avgExpData.map(d=>d.n), datasets: [{ label:'Media Spesa', data: avgExpData.map(d=>d.v), backgroundColor: '#e74c3c' }] }, options: { responsive:true, maintainAspectRatio:false } });
+        if(cAvgPie) cAvgPie.destroy();
+        cAvgPie = new Chart(document.getElementById('avgExpPieChart'), { type: 'pie', data: { labels: avgExpData.map(d=>d.n), datasets: [{ data: avgExpData.map(d=>d.v) }] }, options: { responsive:true, maintainAspectRatio:false } });
+
+        const rI = yearRecords.filter(r=>r.type==='Entrata' && new Date(r.date).getMonth()===selM).reduce((s,r)=>s+r.amount,0);
+        const pI = catsInc.reduce((s,c)=>s+c.b,0);
+        if(cMInc) cMInc.destroy();
+        cMInc = new Chart(document.getElementById('mChartInc'), { type:'bar', data: { labels:['Budget','Reale'], datasets:[{label:'Euro', data:[pI, rI], backgroundColor:['#3498db','#27ae60']}] }, options:{responsive:true,maintainAspectRatio:false} });
+
+        const rE = yearRecords.filter(r=>r.type==='Uscita' && new Date(r.date).getMonth()===selM).reduce((s,r)=>s+r.amount,0);
+        const pE = catsExp.reduce((s,c)=>s+c.b,0);
+        if(cMExp) cMExp.destroy();
+        cMExp = new Chart(document.getElementById('mChartExp'), { type:'bar', data: { labels:['Budget','Reale'], datasets:[{label:'Euro', data:[pE, rE], backgroundColor:['#3498db','#e74c3c']}] }, options:{responsive:true,maintainAspectRatio:false} });
     }
 
     function setType(t) { currentType = t; document.getElementById('btn-inc').classList.toggle('inc-active', t === 'Entrata'); document.getElementById('btn-exp').classList.toggle('exp-active', t === 'Uscita'); render(); }
+    
     async function addRecord() {
+        const editId = document.getElementById('edit-id').value;
+        if(editId) records = records.filter(r=>r.id!=editId);
         records.push({ id: Date.now(), type: currentType, date: document.getElementById('date').value, desc: document.getElementById('desc').value, category: document.getElementById('cat-select').value, amount: parseFloat(document.getElementById('amount').value), recurring: document.getElementById('is-recurring').checked });
+        document.getElementById('edit-id').value = ""; document.getElementById('form-title').innerText = "Nuovo Movimento";
         render(); await saveToCloud();
     }
+    
     function delRecord(id) { if(confirm("Eliminare?")) { records = records.filter(r=>r.id!==id); render(); saveToCloud(); } }
+    function editRecord(id) { 
+        const r = records.find(x=>x.id===id); 
+        setType(r.type); 
+        document.getElementById('date').value=r.date; 
+        document.getElementById('desc').value=r.desc; 
+        document.getElementById('amount').value=r.amount; 
+        document.getElementById('is-recurring').checked=r.recurring; 
+        document.getElementById('edit-id').value=r.id; 
+        document.getElementById('form-title').innerText="Modifica Movimento";
+        showPage('history', document.querySelector('button[onclick*="history"]'));
+    }
+
     function addCat(type) { const name = document.getElementById(type==='inc'?'new-cat-inc':'new-cat-exp').value; if(name) { if(type==='inc') catsInc.push({n:name, b:0}); else catsExp.push({n:name, b:0}); render(); saveToCloud(); } }
+    function rendCatEdit() {
+        document.getElementById('edit-cats-inc').innerHTML = catsInc.map((c,i)=>`<div style="display:flex; gap:10px; margin-bottom:5px;"><span>${c.n}</span><input type="number" value="${c.b}" onchange="catsInc[${i}].b=parseFloat(this.value);saveToCloud();" style="width:80px"></div>`).join('');
+        document.getElementById('edit-cats-exp').innerHTML = catsExp.map((c,i)=>`<div style="display:flex; gap:10px; margin-bottom:5px;"><span>${c.n}</span><input type="number" value="${c.b}" onchange="catsExp[${i}].b=parseFloat(this.value);saveToCloud();" style="width:80px"></div>`).join('');
+    }
+
+    function exportToExcel() {
+        const selYear = document.getElementById('year-selector').value;
+        const data = records.filter(r => new Date(r.date).getFullYear().toString() === selYear).map(r => ({ Data: r.date, Descrizione: r.desc, Categoria: r.category, Tipo: r.type, Importo: r.amount }));
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Dati");
+        XLSX.writeFile(wb, `Wallet_${selYear}.xlsx`);
+    }
+
+    function importFromExcel(input) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const wb = XLSX.read(e.target.result, {type:'array'});
+            const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+            data.forEach(row => { records.push({ id: Date.now() + Math.random(), type: row.Tipo, date: row.Data, desc: row.Descrizione, category: row.Categoria, amount: row.Importo }); });
+            render(); saveToCloud();
+        };
+        reader.readAsArrayBuffer(input.files[0]);
+    }
 
     window.onload = () => {
         const yearSel = document.getElementById('year-selector');
-        for(let y=2025; y<=2030; y++) { const opt=document.createElement('option'); opt.value=y; opt.text=y; if(y===2026) opt.selected=true; yearSel.appendChild(opt); }
-        months.forEach((m,i) => { document.getElementById('month-filter').innerHTML += `<option value="${i}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`; });
+        for(let y=2024; y<=2030; y++) { const opt=document.createElement('option'); opt.value=y; opt.text=y; if(y===2026) opt.selected=true; yearSel.appendChild(opt); }
+        months.forEach((m,i) => { 
+            document.getElementById('f-month').innerHTML += `<option value="${i}">${m}</option>`; 
+            document.getElementById('month-filter').innerHTML += `<option value="${i}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`; 
+        });
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
     };
 </script>
